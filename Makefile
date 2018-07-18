@@ -1,29 +1,38 @@
+ifndef SOURCE
+$(error SOURCE is not set. Please define the input source file SOURCE=input.c )
+endif
+ifdef SOURCE
+$(info == Using input file $(SOURCE) )
+endif
+
+INPUT_FILE_STEM=$(basename $(SOURCE))
+
 all: analysis prediction design
 
-analysis: current_input.c
-	cat current_input.c | grep -v "#include" > current_input_no_header.c
-	python input_code/parser_2.py current_input_no_header.c
+analysis: $(SOURCE) 
+	cat current_input.c | grep -v "#include" $(INPUT_FILE_STEM)_no_header.c 
+	python input_code/parser_2.py $(INPUT_FILE_STEM)_no_header.c
 	if [ ! -d "patterns" ];then mkdir patterns;fi
-	mv current_input_no_header.atrace patterns
-	mv current_input_no_header.maxj_compute current_input_no_header.vec_info generated_hardware_design
-	python ./performance_prediction/prf_utils.py writePDFTrace ./patterns/current_intput_no_header.atrace
-	mv trace.pdf ./patterns/current_intput_no_header_trace.pdf
+	mv $(INPUT_FILE_STEM)_no_header.atrace patterns
+	mv $(INPUT_FILE_STEM)_no_header.maxj_compute $(INPUT_FILE_STEM)_no_header.vec_info generated_hardware_design
+	python ./performance_prediction/prf_utils.py writePDFTrace ./patterns/$(INPUT_FILE_STEM)_no_header.atrace
+	mv trace.pdf ./patterns/$(INPUT_FILE_STEM)_no_header_trace.pdf
 
-prediction: patterns/current_input.atrace
-	python2.7 performance_prediction/schedule_atrace.py patterns/current_input.atrace ReRo 2 4
-	python2.7 performance_prediction/schedule_atrace.py patterns/current_input.atrace ReCo 2 4
-	python2.7 performance_prediction/schedule_atrace.py patterns/current_input.atrace RoCo 2 4
-	python2.7 performance_prediction/schedule_atrace.py patterns/current_input.atrace ReTr 2 4
+prediction: patterns/$(INPUT_FILE_STEM)_no_header.atrace
+	python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReRo 2 4
+	python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReCo 2 4
+	python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace RoCo 2 4
+	python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReTr 2 4
 	if [ ! -d "schedules" ];then mkdir schedules;fi
 	mv patterns/*.schedule schedules
 	./performance_prediction/generate_analysis.sh
-	mv current_input.analysis schedules
+	mv $(INPUT_FILE_STEM)_no_header.analysis schedules
 	@echo "Best configuration"
-	@cat ./schedules/current_input.analysis | head -n 1 | sed "s/,/ /g"
-	@cat ./schedules/current_input.analysis | tail -n +2 |sed "s/,/ /g" | sort -k7rn -k1n | head -n 1
+	@cat ./schedules/$(INPUT_FILE_STEM)_no_header.analysis | head -n 1 | sed "s/,/ /g"
+	@cat ./schedules/$(INPUT_FILE_STEM)_no_header.analysis | tail -n +2 |sed "s/,/ /g" | sort -k7rn -k1n | head -n 1
 
 design:
-	cd generated_hardware_design;./generate_cfg.sh;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;./generate_prf_constants.sh;python ./generate_kernel.py;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/
+	cd generated_hardware_design;./generate_cfg.sh;unzip PolyMemStream_ref.zip;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;./generate_prf_constants.sh;python ./generate_kernel.py;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/
 	
 
 sequential:
