@@ -1,7 +1,11 @@
 import json
+import sys
+
+
+INPUT_FILE_STEM=sys.argv[1]
 
 #Read analysis data 
-vector_informations = json.load(open("current_input.vec_info","r"))
+vector_informations = json.load(open(INPUT_FILE_STEM+".vec_info","r"))
 print vector_informations
 
 vector_mapping = vector_informations[0]
@@ -13,7 +17,7 @@ print write_access_mapping
 
 
 configuration={}
-with open("current_input.cfg") as f:
+with open(INPUT_FILE_STEM+".cfg") as f:
     for line in f:
         conf_line = line.strip().split("=")
         configuration[conf_line[0]]=conf_line[1].replace('"','')
@@ -23,7 +27,7 @@ print configuration
 
 maxj_compute=""
 
-with open("current_input.maxj_compute")  as f:
+with open(INPUT_FILE_STEM+".maxj_compute")  as f:
     maxj_compute=f.read()
 print maxj_compute
 

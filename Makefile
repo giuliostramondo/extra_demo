@@ -25,14 +25,14 @@ prediction: patterns/$(INPUT_FILE_STEM)_no_header.atrace
 	python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReTr 2 4
 	if [ ! -d "schedules" ];then mkdir schedules;fi
 	mv patterns/*.schedule schedules
-	./performance_prediction/generate_analysis.sh
+	./performance_prediction/generate_analysis.sh $(INPUT_FILE_STEM)_no_header
 	mv $(INPUT_FILE_STEM)_no_header.analysis schedules
 	@echo "Best configuration"
 	@cat ./schedules/$(INPUT_FILE_STEM)_no_header.analysis | head -n 1 | sed "s/,/ /g"
 	@cat ./schedules/$(INPUT_FILE_STEM)_no_header.analysis | tail -n +2 |sed "s/,/ /g" | sort -k7rn -k1n | head -n 1
 
 design:
-	cd generated_hardware_design;./generate_cfg.sh;unzip PolyMemStream_ref.zip;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;./generate_prf_constants.sh;python ./generate_kernel.py;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/
+	cd generated_hardware_design;./generate_cfg.sh $(INPUT_FILE_STEM)_no_header;unzip PolyMemStream_ref.zip;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;./generate_prf_constants.sh $(INPUT_FILE_STEM)_no_header;python ./generate_kernel.py $(INPUT_FILE_STEM)_no_header;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/
 	
 
 sequential:

@@ -12,7 +12,7 @@ echo $cell
 declare -A bw_csv_columns_scheme=( ["ReRo"]=3 ["ReCo"]=4 ["RoCo"]=5 ["ReTr"]=6 )
 declare -A bw_csv_rows_mem=( ["8"]=2 ["16"]=3 )
 
-file_name_stem="current_input"
+file_name_stem=$1
 output_file=${file_name_stem}.analysis
 N_sequential_read=`cat ./patterns/${file_name_stem}.atrace | sed -E "s/,/\n/g"| wc -l`
 echo "Memories,P,Q,Scheme,N_sequential_read,N_parallel_read,Speedup,Efficiency,Extimated_BW,schedule_file">$output_file
