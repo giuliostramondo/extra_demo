@@ -1,0 +1,12 @@
+1 To start the server
+
+Activate the virtual environment
+- source venv/bin/activate 
+
+( maybe enable python 2.7 ) To test without
+
+Create a tunnel between the machine using the backend and the backend
+ssh -D 8080 giuliostramondo@fpga_uva (from the mac)
+
+Configure the proxy on the mac to use the socket proxy at localhost 8080 
+
