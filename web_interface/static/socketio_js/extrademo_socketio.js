@@ -22,6 +22,57 @@ function create_card( title, content )
    return card_html_code;
 }
 
+function create_inner_card( title, content )
+{
+    var card_html_code=`
+                    <div class="container">
+                      <h3>`+title+`</h3>
+                      <div class="card">
+                        <div class="card-body">
+                    `+content+`
+                        </div>
+                      </div>
+                    </div>
+                    `;
+             
+   return card_html_code;
+}
+
+function create_loop_info_string( loop_info )
+{
+            var loop_info_string="<div>Polymem's loop contains "+
+                        loop_info.length+" nested loops.</div>";
+            loop_info_string+='<table style="width:100%;">';
+                loop_info_string+='<tr>';
+                loop_info_string+='<td>Iterator Name</td>';
+                loop_info_string+='<td>Start</td>';
+                loop_info_string+='<td>End</td>';
+                loop_info_string+='<td>Stride</td>';
+                loop_info_string+='</tr>';
+            for ( var i in loop_info){
+                loop_info_string+='<tr>';
+                loop_info_string+='<td>'+loop_info[i][0]+'</td>';
+                loop_info_string+='<td>'+loop_info[i][1]+'</td>';
+                loop_info_string+='<td>'+loop_info[i][2]+'</td>';
+                loop_info_string+='<td>'+loop_info[i][3]+'</td>';
+                loop_info_string+='</tr>';
+            }
+            loop_info_string+='</table>';
+     return create_inner_card( "Loop Analysis",loop_info_string); 
+}
+
+function get_trace_plot_legend()
+{
+        var legend=`
+                <div style="position:relative;  top: -650px;left:710px;z-index: 10;" id="legend-outer">
+                    <div id="legend-inner">
+                        <span id="span-outer" class="rounded-0"><span id="inner-1" class="rounded-0"></span></span> Accessed
+                        <span id="span-outer" class="rounded-0"><span id="inner-2" class="rounded-1"></span></span> Not Accessed
+                    </div>
+                </div>`;
+    return legend;
+}
+
 function init_socketio() {
             // Use a "/test" namespace.
             // An application can open a connection on multiple namespaces, and
@@ -126,14 +177,12 @@ function init_socketio() {
                           autosize: true
                         };
                         var title= 'Analysis Results';
-                        var legend=`
-                            <div style="position:relative;  top: -650px;left:710px;z-index: 10;" id="legend-outer">
-                                <div id="legend-inner">
-                                    <span id="span-outer" class="rounded-0"><span id="inner-1" class="rounded-0"></span></span> Accessed
-                                    <span id="span-outer" class="rounded-0"><span id="inner-2" class="rounded-1"></span></span> Not Accessed
-                                </div>
-                            </div>`;
-                        var content='<div id="trace_plot">'+legend+'</div>';
+                        var loop_info_string=create_loop_info_string(msg.loop_info);
+                        
+                        var legend=get_trace_plot_legend();
+                        var content="";
+                        content+=loop_info_string;
+                        content+='<div id="trace_plot">'+legend+'</div>';
                         var card = create_card(title,content);
                         //Remove old content of source_code div
                         $('#analysis_output').html("");
