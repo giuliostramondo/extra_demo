@@ -5,6 +5,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 import os
 from prf_utils import parseATrace, find_plot_dimension 
+import json
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -157,10 +158,8 @@ def analyze_code(message):
     concurrentAccessList=parseATrace(project_path+'/current_input_no_includes.atrace')
     print "checking plot dimensions"
     dimensions = find_plot_dimension(concurrentAccessList)
-    #TODO create data structure with x y z of the heatmap to send back to the Client
-    # The client will display the heatmap using the info at this page
-    # https://plot.ly/javascript/heatmaps/
-    # The library is already loaded
+    
+    # The conversion to set makes the for loop way faster 
     concurrentAccessSet=set(concurrentAccessList[0])
     print "generating heatmap data to plot"
     for i in range(0,dimensions[0]):
@@ -172,6 +171,14 @@ def analyze_code(message):
             else:
                 z.append(0);
 
+    with open(project_path+'/current_input_no_includes.loop_info') as f:
+        loop_info = json.load(f) 
+
+    with open(project_path+'/current_input_no_includes.vec_info') as f:
+        vec_access_info = json.load(f)    
+
+    with open(project_path+'/current_input_no_includes.vec_size_info') as f:
+        vec_size_info = json.load(f)       
     
     print "emitting data"
     emit('analysis_output',
@@ -186,7 +193,10 @@ def analyze_code(message):
                     'dtick':1,
                     'tickvals':[0,1],
                     'ticktext':['Not accessed','Accessed']
-                    }}
+                    }},
+                'loop_info':loop_info,
+                'vec_access_info':vec_access_info,
+                'vec_size_info': vec_size_info
             })
   
 

@@ -398,6 +398,11 @@ else:
     maxj_compute_fnc = wrap_codeblock_in_maxj_function(updated_code_block,"compute",read_access_mapping,write_access_mapping)
     out_compute_file = open(input_c_code[:-2]+".maxj_compute","w")
     out_compute_file.write(maxj_compute_fnc)
-    
+    #dumping loop informations
+    with open(input_c_code[:-2]+".loop_info","w") as loop_info_file:
+        json.dump(loops_info,loop_info_file) 
+    #dumping vector sizes informations
+    with open(input_c_code[:-2]+".vec_size_info","w") as vec_size_info_file:
+        json.dump(array_dict,vec_size_info_file) 
 
 

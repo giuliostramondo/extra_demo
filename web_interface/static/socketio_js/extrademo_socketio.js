@@ -69,6 +69,13 @@ function init_socketio() {
                         console.log('Received Analysis output')
                         console.log(msg.parser_out);
                         console.log(msg.data);
+                        console.log('loop_info');
+                        console.log(msg.loop_info);
+                        console.log('vec_access_info');
+                        console.log(msg.vec_access_info);
+                        console.log('vec_size_info');
+                        console.log(msg.vec_size_info);
+
                         var axisTemplate = {
                           range: [0, 30],
                           autorange: false,
