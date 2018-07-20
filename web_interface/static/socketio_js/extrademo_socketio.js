@@ -72,7 +72,47 @@ function get_trace_plot_legend()
                 </div>`;
     return legend;
 }
-
+function get_trace_plot_layout(){
+        var layout = {
+                          title: 'Application Trace',
+                          /*margin: {
+                            t: 200,
+                            r: 200,
+                            b: 200,
+                            l: 200
+                          },*/
+                          xaxis: {
+                          range: [-0.5, 60.5],
+                          autorange: false,
+                          showgrid: true,
+                          zeroline: false,
+                          linecolor: 'black',
+                          showticklabels: true,
+                          showscale: false,
+                          ticks: ':'
+                        },
+                          yaxis: {
+                          range: [-0.5, 30.5],
+                          autorange: false,
+                          showgrid: true,
+                          zeroline: false,
+                          linecolor: 'black',
+                          showticklabels: true,
+                          showscale: false,
+                          ticks: ':'
+                        },
+                          zaxis:{
+                          showscale: false,
+                            },
+                          showlegend: false,
+                          showscale: false,
+                          dragmode: 'pan',
+                          with: 700,
+                          height: 700,
+                          autosize: true
+                        };
+    return layout;
+}
 function init_socketio() {
             // Use a "/test" namespace.
             // An application can open a connection on multiple namespaces, and
@@ -127,55 +167,9 @@ function init_socketio() {
                         console.log('vec_size_info');
                         console.log(msg.vec_size_info);
 
-                        var axisTemplate = {
-                          range: [0, 30],
-                          autorange: false,
-                          showgrid: true,
-                          zeroline: false,
-                          linecolor: 'black',
-                          showticklabels: true,
-                          showscale: false,
-                          ticks: ':'
-                        };
+                        
 
-                        var layout = {
-                          title: 'Application Trace',
-                          /*margin: {
-                            t: 200,
-                            r: 200,
-                            b: 200,
-                            l: 200
-                          },*/
-                          xaxis: {
-                          range: [-0.5, 60.5],
-                          autorange: false,
-                          showgrid: true,
-                          zeroline: false,
-                          linecolor: 'black',
-                          showticklabels: true,
-                          showscale: false,
-                          ticks: ':'
-                        },
-                          yaxis: {
-                          range: [-0.5, 30.5],
-                          autorange: false,
-                          showgrid: true,
-                          zeroline: false,
-                          linecolor: 'black',
-                          showticklabels: true,
-                          showscale: false,
-                          ticks: ':'
-                        },
-                          zaxis:{
-                          showscale: false,
-                            },
-                          showlegend: false,
-                          showscale: false,
-                          dragmode: 'pan',
-                          with: 700,
-                          height: 700,
-                          autosize: true
-                        };
+                        var layout = get_trace_plot_layout();
                         var title= 'Analysis Results';
                         var loop_info_string=create_loop_info_string(msg.loop_info);
                         
