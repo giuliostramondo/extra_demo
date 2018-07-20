@@ -177,7 +177,7 @@ def analyze_code(message):
     emit('analysis_output',
             {'parser_out': parser_out, 
                 'data':{'x': x, 'y':y,'z':z,
-                'showscale' :True,'type':'heatmap','xgap':1,'ygap':1,
+                'showscale' :False,'type':'heatmap','xgap':1,'ygap':1,
                 'colorscale': [
                     [0, 'rgb(0, 0, 0)'],
                     [1, 'rgb(255, 255, 255)']],

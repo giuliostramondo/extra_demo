@@ -6,6 +6,22 @@ function escapeHTML( string )
     return pre.innerHTML;
 }
 
+function create_card( title, content )
+{
+    var card_html_code=`
+                    <div class="container">
+                      <h2>`+title+`</h2>
+                      <div class="card">
+                        <div class="card-body">
+                    `+content+`
+                        </div>
+                      </div>
+                    </div>
+                    `;
+             
+   return card_html_code;
+}
+
 function init_socketio() {
             // Use a "/test" namespace.
             // An application can open a connection on multiple namespaces, and
@@ -102,17 +118,32 @@ function init_socketio() {
                           height: 700,
                           autosize: true
                         };
-                        Plotly.newPlot('analysis_output', [msg.data],layout);
+                        var title= 'Analysis Results';
+                        var content= '<div id="trace_plot"></div>';
+                        var card = create_card(title,content);
+                        $('#analysis_output').prepend(card);
+                        Plotly.newPlot('trace_plot', [msg.data],layout);
                     })
+
             socket.on('selected_project',function(msg){
                     console.log(msg.code);
-                    $('#source_code').prepend('<div id="editor">'+escapeHTML(msg.code)+'</div>')
-                    $('#source_code').append(
+                    var title = 'View Code';
+                    var content ='<div id="editor">'+escapeHTML(msg.code)+'</div>'+ 
                     `
+                    <br>
                     <form id='analyze' method='POST' action='#'>
                         <input type="SUBMIT" value="Analyze">
-                    </form>
-                    `);
+                    </form>`;
+                    var card = create_card(title,content); 
+                    $('#source_code').prepend(card);
+
+                    //Disable page scroll when on editor
+                    $('#editor').mouseenter(function() {
+                            $("body").addClass("editor-active");}
+                        ).mouseleave(function() {
+                            $("body").removeClass("editor-active");});
+
+
                     var editor = ace.edit("editor");
                     editor.setTheme("ace/theme/monokai");
                     editor.session.setMode("ace/mode/c_cpp");
