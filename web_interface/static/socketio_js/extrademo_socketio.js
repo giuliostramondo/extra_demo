@@ -128,6 +128,8 @@ function init_socketio() {
                             </div>`;
                         var content='<div id="trace_plot">'+legend+'</div>';
                         var card = create_card(title,content);
+                        //Remove old content of source_code div
+                        $('#analysis_output').html("");
                         $('#analysis_output').prepend(card);
                         Plotly.newPlot('trace_plot', [msg.data],layout);
                     })
@@ -142,6 +144,8 @@ function init_socketio() {
                         <input type="SUBMIT" value="Analyze">
                     </form>`;
                     var card = create_card(title,content); 
+                    //Remove old content of source_code div
+                    $('#source_code').html("");
                     $('#source_code').prepend(card);
 
                     //Disable page scroll when on editor

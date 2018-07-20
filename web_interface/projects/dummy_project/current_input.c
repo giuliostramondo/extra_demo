@@ -2,7 +2,7 @@
 
 int main(){
 int offset=5;
-int skip=6;
+int skip=4;
 int read=3;
 int DimY= 512;
 int DimX= 170;
