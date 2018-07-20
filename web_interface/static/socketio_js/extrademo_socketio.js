@@ -119,7 +119,14 @@ function init_socketio() {
                           autosize: true
                         };
                         var title= 'Analysis Results';
-                        var content= '<div id="trace_plot"></div>';
+                        var legend=`
+                            <div style="position:relative;  top: -650px;left:710px;z-index: 10;" id="legend-outer">
+                                <div id="legend-inner">
+                                    <span id="span-outer" class="rounded-0"><span id="inner-1" class="rounded-0"></span></span> Accessed
+                                    <span id="span-outer" class="rounded-0"><span id="inner-2" class="rounded-1"></span></span> Not Accessed
+                                </div>
+                            </div>`;
+                        var content='<div id="trace_plot">'+legend+'</div>';
                         var card = create_card(title,content);
                         $('#analysis_output').prepend(card);
                         Plotly.newPlot('trace_plot', [msg.data],layout);
