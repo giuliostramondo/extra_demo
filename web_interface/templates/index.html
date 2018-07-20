@@ -1,9 +1,10 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>Flask-SocketIO Test</title>
+    <title>EXTRA UvA DEMO</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <style type="text/css" media="screen">
     #editor { 
         position: relative;
@@ -75,7 +76,59 @@
                     });
             
             socket.on('analysis_output',function(msg){
+                        console.log('Received Analysis output')
                         console.log(msg.parser_out);
+                        console.log(msg.data);
+                        var axisTemplate = {
+                          range: [0, 30],
+                          autorange: false,
+                          showgrid: true,
+                          zeroline: false,
+                          linecolor: 'black',
+                          showticklabels: true,
+                          showscale: false,
+                          ticks: ':'
+                        };
+
+                        var layout = {
+                          title: 'Application Trace',
+                          /*margin: {
+                            t: 200,
+                            r: 200,
+                            b: 200,
+                            l: 200
+                          },*/
+                          xaxis: {
+                          range: [-0.5, 60.5],
+                          autorange: false,
+                          showgrid: true,
+                          zeroline: false,
+                          linecolor: 'black',
+                          showticklabels: true,
+                          showscale: false,
+                          ticks: ':'
+                        },
+                          yaxis: {
+                          range: [-0.5, 30.5],
+                          autorange: false,
+                          showgrid: true,
+                          zeroline: false,
+                          linecolor: 'black',
+                          showticklabels: true,
+                          showscale: false,
+                          ticks: ':'
+                        },
+                          zaxis:{
+                          showscale: false,
+                            },
+                          showlegend: false,
+                          showscale: false,
+                          dragmode: 'pan',
+                          with: 700,
+                          height: 700,
+                          autosize: true
+                        };
+                        Plotly.newPlot('analysis_output', [msg.data],layout);
                     })
             socket.on('selected_project',function(msg){
                     console.log(msg.code);
@@ -149,7 +202,7 @@
     </script>
 </head>
 <body>
-    <h1>Flask-SocketIO Test</h1>
+    <h1 align="center">EXTRA UvA Demo</h1>
     <p>Async mode is: <b>{{ async_mode }}</b></p>
     <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
     <h2>Select Project:</h2>
@@ -158,7 +211,7 @@
         <input type="SUBMIT" value="Load">
     </form>
     <div id="source_code"></div>
-
+    <div id="analysis_output"><div>
     <h2>Send:</h2>
     <form id="emit" method="POST" action='#'>
         <input type="text" name="emit_data" id="emit_data" placeholder="Message">

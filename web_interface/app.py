@@ -4,6 +4,7 @@ from flask import Flask, render_template, session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 import os
+from prf_utils import parseATrace, find_plot_dimension 
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -115,7 +116,8 @@ def select_project(message):
     with open("projects/"+message['project']+"/current_input.c") as f: 
         s = f.read() 
     session['selected_project']=message['project']
-    emit('selected_project',{'selected_project': session.get('selected_project','not set'),'code':s})
+    emit('selected_project',
+            {'selected_project': session.get('selected_project','not set'),'code':s})
 
 
 @socketio.on('analyze_code', namespace='/test')
@@ -123,6 +125,7 @@ def analyze_code(message):
     print "called analyze_code"
     code=message['source']
     project=session.get('selected_project','not set')
+    print "currently selected project "+project
     project_path="projects/"+project
     source_filename=project_path+'/current_input.c'
     source_filename_no_includes=project_path+'/current_input_no_includes.c'
@@ -138,11 +141,53 @@ def analyze_code(message):
            if not line.startswith('#include'):
                f.write(line) 
                f.write('\n') 
-    os.system("cd "+project_path+"; python ../../../input_code/parser_2.py  current_input_no_includes.c > parser_out")
+    
+    print "starting parser"
+    os.system("cd "+project_path+
+            "; python ../../../input_code/parser_2.py  current_input_no_includes.c > parser_out")
     with open(project_path+'/parser_out','r') as f:
         parser_out = f.read()
+    print "parser_done"
+
     os.remove(project_path+'/parser_out')
-    emit('analysis_output',{'parser_out': parser_out})
+    x=[]
+    y=[]
+    z=[]
+    print "parsing atrace"
+    concurrentAccessList=parseATrace(project_path+'/current_input_no_includes.atrace')
+    print "checking plot dimensions"
+    dimensions = find_plot_dimension(concurrentAccessList)
+    #TODO create data structure with x y z of the heatmap to send back to the Client
+    # The client will display the heatmap using the info at this page
+    # https://plot.ly/javascript/heatmaps/
+    # The library is already loaded
+    concurrentAccessSet=set(concurrentAccessList[0])
+    print "generating heatmap data to plot"
+    for i in range(0,dimensions[0]):
+        for j in range(0,dimensions[1]):
+            x.append(i);
+            y.append(j);
+            if (i,j) in concurrentAccessSet:
+                z.append(1);
+            else:
+                z.append(0);
+
+    
+    print "emitting data"
+    emit('analysis_output',
+            {'parser_out': parser_out, 
+                'data':{'x': x, 'y':y,'z':z,
+                'showscale' :True,'type':'heatmap','xgap':1,'ygap':1,
+                'colorscale': [
+                    [0, 'rgb(0, 0, 0)'],
+                    [1, 'rgb(255, 255, 255)']],
+                'colorbar': {
+                    'tick0':0,
+                    'dtick':1,
+                    'tickvals':[0,1],
+                    'ticktext':['Not accessed','Accessed']
+                    }}
+            })
   
 
 @socketio.on('disconnect', namespace='/test')

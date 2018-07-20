@@ -1,12 +1,33 @@
-1 To start the server
+* Installation
+The supported version of python is python2.7. Installing this version of python in centos 6.5 is possible using scl:
+https://docs.datastax.com/en/cassandra/2.1/cassandra/install/installPython27RHEL.html
+
+Ensure to enable the python27.
+
+The file requirements.txt should list all the python packages required by the webserver. 
+Install these packages using pip:
+    pip install -r requirements.txt
+
+The installation of numpy inside the virtual enviroment required packages external to python : Blas, Atlas, Lapack.
+First check if these libraries are installed in the system using:
+    ldconfig -p | grep blas 
+    ldconfig -p | grep atlas 
+    ldconfig -p | grep lapack 
+These command will tell the location in which the libraries are installed - if the are installed. 
+Once the libraries have been located the solution I found to install numpy in venv was to check the libraries
+that pip was missing during the numpy installation and manually copy them inside venv/lib/ 
+
+
+* To start the server
+
+Enable python 2.7
+    scl enable python27 bash
 
 Activate the virtual environment
-- source venv/bin/activate 
-
-( maybe enable python 2.7 ) To test without
+    source venv/bin/activate 
 
 Create a tunnel between the machine using the backend and the backend
-ssh -D 8080 giuliostramondo@fpga_uva (from the mac)
+    ssh -D 8080 giuliostramondo@fpga_uva (from the mac)
 
 Configure the proxy on the mac to use the socket proxy at localhost 8080 
 
