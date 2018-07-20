@@ -1,0 +1,48 @@
+        #editor { 
+            position: relative;
+            top: 5px;
+            right: 0;
+            bottom: 0;
+            left: 0;
+           height: 500px;
+        }
+        /*Disable scrolling when on editor*/
+        body.editor-active {
+            overflow: hidden;
+           }
+        /*Application Trace Legend */
+          #span-outer {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin: 8px;
+            background-color: #000;
+          }
+              #inner-1 {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin: 1px;
+            background-color: white;
+          }
+            #inner-2 {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin: 1px;
+            background-color: black;
+          }
+          #legend-outer{
+              display: inline-block;
+            width: 270px;
+            height: 40px;
+            margin: 6px;
+            background-color: #000;
+          }
+            #legend-inner{
+              display: inline-block;
+            width: 268px;
+            height: 38px;
+            margin: 1px;
+            background-color: white;
+          }

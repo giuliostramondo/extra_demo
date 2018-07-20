@@ -13,56 +13,7 @@
     <!--<script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>-->
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <style type="text/css" media="screen">
-        #editor { 
-            position: relative;
-            top: 5px;
-            right: 0;
-            bottom: 0;
-            left: 0;
-           height: 500px;
-        }
-        /*Disable scrolling when on editor*/
-        body.editor-active {
-            overflow: hidden;
-           }
-        /*Application Trace Legend */
-          #span-outer {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin: 8px;
-            background-color: #000;
-          }
-              #inner-1 {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            margin: 1px;
-            background-color: white;
-          }
-            #inner-2 {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            margin: 1px;
-            background-color: black;
-          }
-          #legend-outer{
-              display: inline-block;
-            width: 270px;
-            height: 40px;
-            margin: 6px;
-            background-color: #000;
-          }
-            #legend-inner{
-              display: inline-block;
-            width: 268px;
-            height: 38px;
-            margin: 1px;
-            background-color: white;
-          }
-    </style>
+     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='./css/extrademo.css') }}">
     <script src="{{ url_for('static', filename='./socketio_js/extrademo_socketio.js') }}" type="text/javascript" charset="utf-8"></script>
     <script src="{{ url_for('static', filename='./ace-builds/src-noconflict/ace.js') }}" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
