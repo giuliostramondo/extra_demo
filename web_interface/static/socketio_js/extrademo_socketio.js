@@ -265,12 +265,40 @@ function init_socketio() {
                         content+=vector_info_string;
                         content+=vec_access_info_string;
                         content+='<div id="trace_plot">'+legend+'</div>';
+                        content+=`
+                        <form id='performance' method='POST' action='#'>
+                            <input type="SUBMIT" value="Performance Prediction">
+                        </form>`;
                         var card = create_card(title,content);
                         //Remove old content of source_code div
                         $('#analysis_output').html("");
                         $('#analysis_output').prepend(card);
                         Plotly.newPlot('trace_plot', [msg.data],layout);
-                    })
+
+                        $('form#performance').submit(function(event){
+                            socket.emit('performance_prediction',{'data':'ciao'});
+                            return false;
+                        });
+                    });
+
+            var perf_pred_threads=0;
+            var perf_pred_done=0;
+            socket.on('started_performance_prediction',function(msg){
+                    console.log('=== started performance prediction with '+msg.threads+' threads.'); 
+                    perf_pred_threads=msg.threads;
+                    perf_pred_done=0;
+            });
+            
+            socket.on('done_performance_prediction',function(msg){
+                    console.log('=== thread over with performance prediction');
+                    console.log('=== total threads:'+perf_pred_threads); 
+                    perf_pred_done+=1;
+                    console.log('=== done threads:'+perf_pred_done); 
+                    if( perf_pred_done == perf_pred_threads){
+                        console.log('=== all done emit stuff to get analysis'); 
+                    
+                    } 
+            });
 
             socket.on('selected_project',function(msg){
                     console.log(msg.code);

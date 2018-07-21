@@ -17,6 +17,11 @@ These command will tell the location in which the libraries are installed - if t
 Once the libraries have been located the solution I found to install numpy in venv was to check the libraries
 that pip was missing during the numpy installation and manually copy them inside venv/lib/ 
 
+The installation of matplotlib in the virtual environment required libpng-devel
+    sudo yum install libpng-devel
+
+The solver functions inside prf_utils.py rely on the python package enum34
+    pip install enum34 ( in the virtual environment )
 
 * To start the server
 

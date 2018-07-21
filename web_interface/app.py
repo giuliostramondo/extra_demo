@@ -6,6 +6,30 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
 import os
 from prf_utils import parseATrace, find_plot_dimension 
 import json
+import subprocess
+import threading
+
+def popenAndCall(socketio_,onExit,stdout_file, popenArgs):
+    """
+    Runs the given args in a subprocess.Popen, and then calls the function
+    onExit when the subprocess completes.
+    onExit is a callable object, and popenArgs is a list/tuple of args that 
+    would give to subprocess.Popen.
+    """
+    def runInThread(socketio_,onExit, stdout_file, popenArgs):
+        print " ===== thread args"+str(popenArgs)+"+++++++"
+        proc = subprocess.Popen(*popenArgs, shell=True, bufsize=0, stdout=stdout_file)
+        proc.wait()
+        
+        #socketio_.sleep(10)
+        onExit(socketio_)
+        stdout_file.close()
+        return
+    #thread = threading.Thread(target=runInThread, args=(onExit,stdout_file , popenArgs))
+    #thread.start()
+    socketio.start_background_task(runInThread,*(socketio_,onExit,stdout_file,popenArgs))
+    # returns immediately after the thread starts
+    return thread
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -120,6 +144,39 @@ def select_project(message):
     emit('selected_project',
             {'selected_project': session.get('selected_project','not set'),'code':s})
 
+def perf_prediction_done(socketio_):
+    print "++++++ Performance prediction over ++++++"
+    #with app.test_request_context('/'): 
+    socketio_.emit('done_performance_prediction',{'threads': 4},
+                      namespace='/test')
+
+
+@socketio.on('performance_prediction', namespace='/test')
+def performance_prediction(message):
+    print "called performance_prediction"
+    project=session.get('selected_project','not set')
+    project_path="projects/"+project
+    outfile = open(project_path+'/scheduler_out', 'w');
+
+    popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReRo 2 4"])
+    popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReCo 2 4"])
+    popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace RoCo 2 4"])
+    popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReTr 2 4"])
+   # status = subprocess.Popen(["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReRo 2 4"], shell=True, bufsize=0, stdout=outfile)
+
+    #os.system("cd "+project_path+
+    #        "; python ../../../performance_prediction/schedule_atrace.py  current_input_no_includes.atrace ReRo 2 4 > scheduler_out 2> scheduler_out")
+    #with open(project_path+'/scheduler_out','r') as f:
+    #    scheduler_out = f.read()
+  # python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReRo 2 4
+   #    python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReCo 2 4
+    #       python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace RoCo 2 4
+     #          python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReTr 2 4
+      #             if [ ! -d "schedules" ];then mkdir schedules;fi
+       #                mv patterns/*.schedule schedules
+        #                   ./performance_prediction/generate_analysis.sh $(INPUT_FILE_STEM)_no_header
+
+    emit('started_performance_prediction',{'threads': 4})
 
 @socketio.on('analyze_code', namespace='/test')
 def analyze_code(message):

@@ -755,7 +755,7 @@ def solveEuristically_getParallelAccesses(activePoints,p,q,scheme):
         shape = UPA[2]
         point=(UPA[0],UPA[1])
         if not isinstance(shape,Shape):
-            print "Error converting: " +c+" returned: "+UPA
+            print "Error converting: " +str(c)+" returned: "+str(UPA)
         #print str(point)+", "+ str(shape.name)+" -> "+str(AGU(point[0],point[1],p,q,shape))
         mask=[]
         sys.stdout.write(str(point)+", "+ str(shape.name)+" -> "+"[")
