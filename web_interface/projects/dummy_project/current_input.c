@@ -2,8 +2,8 @@
 
 int main(){
 int offset=5;
-int skip=4;
-int read=2;
+int skip=3;
+int read=1;
 int DimY= 512;
 int DimX= 170;
 
