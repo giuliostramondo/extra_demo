@@ -44,10 +44,10 @@ function create_loop_info_string( loop_info )
                         loop_info.length+" nested loops.</div>";
             loop_info_string+='<table style="width:100%;">';
                 loop_info_string+='<tr>';
-                loop_info_string+='<td>Iterator Name</td>';
-                loop_info_string+='<td>Start</td>';
-                loop_info_string+='<td>End</td>';
-                loop_info_string+='<td>Stride</td>';
+                loop_info_string+='<th>Iterator Name</th>';
+                loop_info_string+='<th>Start</th>';
+                loop_info_string+='<th>End</th>';
+                loop_info_string+='<th>Stride</th>';
                 loop_info_string+='</tr>';
             for ( var i in loop_info){
                 loop_info_string+='<tr>';
@@ -60,7 +60,91 @@ function create_loop_info_string( loop_info )
             loop_info_string+='</table>';
      return create_inner_card( "Loop Analysis",loop_info_string); 
 }
-
+function create_vec_accesses_info_string( vec_access_info )
+{
+                        var vec_access_info_string="<div>There are "+vec_access_info[1].length+" read accesses and "+vec_access_info[2].length+" write accesses.</div>";
+                        vec_access_info_string+="<b>Read Accesses</b>";
+                        vec_access_info_string+='<table style="width:100%;">';
+                        var first_row=true;
+                        var read_accesses=vec_access_info[1];
+                       for (var i in read_accesses) {
+                            if( first_row ){
+                            
+                            vec_access_info_string+='<tr>';
+                            vec_access_info_string+='<th>Access To</th>';
+                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
+                            
+                                vec_access_info_string+='<th>Offset '+j+'</th>';
+                            }
+                            vec_access_info_string+='</tr>';
+                            first_row=false;
+                            }
+                            vec_access_info_string+='<tr>';
+                                vec_access_info_string+='<td>'+read_accesses[i][1]+'</td>';
+                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
+                                vec_access_info_string+='<td>'+read_accesses[i][2][j]+'</td>';
+                            }
+                            vec_access_info_string+='</tr>';
+                        } 
+                        vec_access_info_string+='</table>';
+                        vec_access_info_string+="<b>Write Accesses</b>";
+                        vec_access_info_string+='<table style="width:100%;">';
+                        first_row=true;
+                        var write_accesses=vec_access_info[2];
+                       for (var i in write_accesses) {
+                            if( first_row ){
+                            
+                            vec_access_info_string+='<tr>';
+                            vec_access_info_string+='<th>Access To</th>';
+                            for ( var j=0; j<write_accesses[i][2].length;j++ ){
+                            
+                                vec_access_info_string+='<th>Offset '+j+'</th>';
+                            }
+                            vec_access_info_string+='</tr>';
+                            first_row=false;
+                            }
+                            vec_access_info_string+='<tr>';
+                                vec_access_info_string+='<td>'+write_accesses[i][1]+'</td>';
+                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
+                                vec_access_info_string+='<td>'+write_accesses[i][2][j]+'</td>';
+                            }
+                            vec_access_info_string+='</tr>';
+                        } 
+                        vec_access_info_string+='</table>';
+         return create_inner_card( "Memory Accesses Analysis",vec_access_info_string); 
+}
+function create_vec_size_info_string( vec_size_info )
+{
+            var vector_info_string="<div>There are "+Object.keys(vec_size_info).length+" vectors.</div>";
+            vector_info_string+='<table style="width:100%;">';
+            var first_row=true;
+           for (var key in vec_size_info) {
+                // check if the property/key is defined in the object itself, not in parent
+                if (vec_size_info.hasOwnProperty(key)) {
+                    var sizes = vec_size_info[key];
+                    console.log(key, vec_size_info[key]);
+                    if( first_row ){
+                    
+                    vector_info_string+='<tr>';
+                    vector_info_string+='<th>Name</th>';
+                    for ( var i in sizes ){
+                    
+                        vector_info_string+='<th>Dimension '+i+'</th>';
+                    }
+                    vector_info_string+='</tr>';
+                    first_row=false;
+                    }
+                    vector_info_string+='<tr>';
+                    vector_info_string+='<td>'+key+'</td>';
+                    for ( var i in sizes ){
+                        vector_info_string+='<td>'+sizes[i]+'</td>';
+                    }
+                    vector_info_string+='</tr>';
+                }
+            } 
+            vector_info_string+='</table>';
+            return create_inner_card("Vector Size Analysis",vector_info_string);
+}
 function get_trace_plot_legend()
 {
         var legend=`
@@ -172,10 +256,62 @@ function init_socketio() {
                         var layout = get_trace_plot_layout();
                         var title= 'Analysis Results';
                         var loop_info_string=create_loop_info_string(msg.loop_info);
-                        
                         var legend=get_trace_plot_legend();
                         var content="";
+                        var vector_info_string=create_vec_size_info_string( msg.vec_size_info )
+                        var vec_access_info_string="<div>There are "+msg.vec_access_info[1].length+" read accesses and "+msg.vec_access_info[2].length+" write accesses.</div>";
+                        vec_access_info_string+="<b>Read Accesses</b>";
+                        vec_access_info_string+='<table style="width:100%;">';
+                        var first_row=true;
+                        var read_accesses=msg.vec_access_info[1];
+                       for (var i in read_accesses) {
+                            if( first_row ){
+                            
+                            vec_access_info_string+='<tr>';
+                            vec_access_info_string+='<th>Access To</th>';
+                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
+                            
+                                vec_access_info_string+='<th>Offset '+j+'</th>';
+                            }
+                            vec_access_info_string+='</tr>';
+                            first_row=false;
+                            }
+                            vec_access_info_string+='<tr>';
+                                vec_access_info_string+='<td>'+read_accesses[i][1]+'</td>';
+                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
+                                vec_access_info_string+='<td>'+read_accesses[i][2][j]+'</td>';
+                            }
+                            vec_access_info_string+='</tr>';
+                        } 
+                        vec_access_info_string+='</table>';
+                        vec_access_info_string+="<b>Write Accesses</b>";
+                        vec_access_info_string+='<table style="width:100%;">';
+                        first_row=true;
+                        var write_accesses=msg.vec_access_info[2];
+                       for (var i in write_accesses) {
+                            if( first_row ){
+                            
+                            vec_access_info_string+='<tr>';
+                            vec_access_info_string+='<th>Access To</th>';
+                            for ( var j=0; j<write_accesses[i][2].length;j++ ){
+                            
+                                vec_access_info_string+='<th>Offset '+j+'</th>';
+                            }
+                            vec_access_info_string+='</tr>';
+                            first_row=false;
+                            }
+                            vec_access_info_string+='<tr>';
+                                vec_access_info_string+='<td>'+write_accesses[i][1]+'</td>';
+                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
+                                vec_access_info_string+='<td>'+write_accesses[i][2][j]+'</td>';
+                            }
+                            vec_access_info_string+='</tr>';
+                        } 
+                        vec_access_info_string+='</table>';
+vec_access_info_string=create_vec_accesses_info_string( msg.vec_access_info );
                         content+=loop_info_string;
+                        content+=vector_info_string;
+                        content+=vec_access_info_string;
                         content+='<div id="trace_plot">'+legend+'</div>';
                         var card = create_card(title,content);
                         //Remove old content of source_code div
