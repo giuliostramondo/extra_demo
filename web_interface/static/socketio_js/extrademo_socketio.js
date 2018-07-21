@@ -296,10 +296,14 @@ function init_socketio() {
                     console.log('=== done threads:'+perf_pred_done); 
                     if( perf_pred_done == perf_pred_threads){
                         console.log('=== all done emit stuff to get analysis'); 
-                    
+                        socket.emit('gen_schedule_analysis'); 
                     } 
             });
-
+            
+            socket.on('gen_schedule_analysis_done',function(msg){
+                    console.log('=== received schedule analysis');
+                    
+            });
             socket.on('selected_project',function(msg){
                     console.log(msg.code);
                     var title = 'View Code';

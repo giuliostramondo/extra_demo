@@ -18,10 +18,10 @@ def popenAndCall(socketio_,onExit,stdout_file, popenArgs):
     """
     def runInThread(socketio_,onExit, stdout_file, popenArgs):
         print " ===== thread args"+str(popenArgs)+"+++++++"
-        proc = subprocess.Popen(*popenArgs, shell=True, bufsize=0, stdout=stdout_file)
-        proc.wait()
+        #proc = subprocess.Popen(*popenArgs, shell=True, bufsize=0, stdout=stdout_file)
+        #proc.wait()
         
-        #socketio_.sleep(10)
+        socketio_.sleep(3)
         onExit(socketio_)
         stdout_file.close()
         return
@@ -146,11 +146,19 @@ def select_project(message):
 
 def perf_prediction_done(socketio_):
     print "++++++ Performance prediction over ++++++"
-    #with app.test_request_context('/'): 
+
     socketio_.emit('done_performance_prediction',{'threads': 4},
                       namespace='/test')
 
 
+@socketio.on('gen_schedule_analysis', namespace='/test')
+def gen_schedule_analysis():
+    print "generating schedule analysis"
+    project=session.get('selected_project','not set')
+    project_path="projects/"+project
+    os.system("cd "+project_path+"; ../../../performance_prediction/generate_analysis_webapp.sh  current_input_no_includes > schedule_analysis_out")
+    emit('gen_schedule_analysis_done',{'data': 'ciao'})
+ 
 @socketio.on('performance_prediction', namespace='/test')
 def performance_prediction(message):
     print "called performance_prediction"
