@@ -259,56 +259,8 @@ function init_socketio() {
                         var legend=get_trace_plot_legend();
                         var content="";
                         var vector_info_string=create_vec_size_info_string( msg.vec_size_info )
-                        var vec_access_info_string="<div>There are "+msg.vec_access_info[1].length+" read accesses and "+msg.vec_access_info[2].length+" write accesses.</div>";
-                        vec_access_info_string+="<b>Read Accesses</b>";
-                        vec_access_info_string+='<table style="width:100%;">';
-                        var first_row=true;
-                        var read_accesses=msg.vec_access_info[1];
-                       for (var i in read_accesses) {
-                            if( first_row ){
-                            
-                            vec_access_info_string+='<tr>';
-                            vec_access_info_string+='<th>Access To</th>';
-                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
-                            
-                                vec_access_info_string+='<th>Offset '+j+'</th>';
-                            }
-                            vec_access_info_string+='</tr>';
-                            first_row=false;
-                            }
-                            vec_access_info_string+='<tr>';
-                                vec_access_info_string+='<td>'+read_accesses[i][1]+'</td>';
-                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
-                                vec_access_info_string+='<td>'+read_accesses[i][2][j]+'</td>';
-                            }
-                            vec_access_info_string+='</tr>';
-                        } 
-                        vec_access_info_string+='</table>';
-                        vec_access_info_string+="<b>Write Accesses</b>";
-                        vec_access_info_string+='<table style="width:100%;">';
-                        first_row=true;
-                        var write_accesses=msg.vec_access_info[2];
-                       for (var i in write_accesses) {
-                            if( first_row ){
-                            
-                            vec_access_info_string+='<tr>';
-                            vec_access_info_string+='<th>Access To</th>';
-                            for ( var j=0; j<write_accesses[i][2].length;j++ ){
-                            
-                                vec_access_info_string+='<th>Offset '+j+'</th>';
-                            }
-                            vec_access_info_string+='</tr>';
-                            first_row=false;
-                            }
-                            vec_access_info_string+='<tr>';
-                                vec_access_info_string+='<td>'+write_accesses[i][1]+'</td>';
-                            for ( var j=0; j<read_accesses[i][2].length;j++ ){
-                                vec_access_info_string+='<td>'+write_accesses[i][2][j]+'</td>';
-                            }
-                            vec_access_info_string+='</tr>';
-                        } 
-                        vec_access_info_string+='</table>';
-vec_access_info_string=create_vec_accesses_info_string( msg.vec_access_info );
+                       
+                        var vec_access_info_string=create_vec_accesses_info_string( msg.vec_access_info );
                         content+=loop_info_string;
                         content+=vector_info_string;
                         content+=vec_access_info_string;
