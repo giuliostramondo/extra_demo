@@ -157,7 +157,12 @@ def gen_schedule_analysis():
     project=session.get('selected_project','not set')
     project_path="projects/"+project
     os.system("cd "+project_path+"; ../../../performance_prediction/generate_analysis_webapp.sh  current_input_no_includes > schedule_analysis_out")
-    emit('gen_schedule_analysis_done',{'data': 'ciao'})
+    with open(project_path+"/schedule_analysis_out") as f:
+        schedule_analysis_out = f.read()
+    with open(project_path+"/current_input_no_includes.analysis") as f:
+        schedule_analysis = f.read()
+        
+    emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':schedule_analysis})
  
 @socketio.on('performance_prediction', namespace='/test')
 def performance_prediction(message):

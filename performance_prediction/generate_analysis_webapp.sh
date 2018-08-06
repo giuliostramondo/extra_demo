@@ -16,23 +16,23 @@ file_name_stem=$1
 output_file=${file_name_stem}.analysis
 N_sequential_read=`cat ${file_name_stem}.atrace | sed -E "s/,/\n/g"| wc -l`
 echo "Memories,P,Q,Scheme,N_sequential_read,N_parallel_read,Speedup,Efficiency,Extimated_BW,schedule_file">$output_file
-for schedule in $(ls . | grep schedule); do 
+for schedule in $(ls . | grep schedule$); do 
     echo "this is i -> "$schedule 
-    info=(`echo $schedule | sed "s/current_input_\(.*\)_\([0-9]\+\)mems_p\([0-9]\+\)_q\([0-9]\+\).*/\1 \2 \3 \4/"`)
+    info=(`echo $schedule | sed "s/${file_name_stem}_\(.*\)_\([0-9]\+\)mems_p\([0-9]\+\)_q\([0-9]\+\).*/\1 \2 \3 \4/"`)
     scheme=${info[0]}
     mems=${info[1]}
     p=${info[2]}
     q=${info[3]}
-    Npar=`wc -l ${schedule} | sed "s/...schedules.*//"`
+    Npar=`wc -l ${schedule} | sed "s/ .*//"`
     Speedup=`echo "scale=2;${N_sequential_read}/${Npar}"| bc -l`
     Efficiency=`echo "scale=2;${N_sequential_read}/(${mems}*${Npar})"| bc -l`
-    ../../../performance_prediction/polymem_theoretical_bw.csv
+    #../../../performance_prediction/polymem_theoretical_bw.csv
     echo "read_csv_cell ../../../performance_prediction/polymem_theoretical_bw.csv ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}"
     read_csv_cell "../../../performance_prediction/polymem_theoretical_bw.csv" ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}
     echo "$bla"
     echo "${bw_csv_columns_scheme[${scheme}]}" 
 
-    Theoretical_BW=`read_csv_cell ./performance_prediction/polymem_theoretical_bw.csv ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}`
+    Theoretical_BW=`read_csv_cell ../../../performance_prediction/polymem_theoretical_bw.csv ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}`
     Extimated_BW=`echo "scale=2;${Theoretical_BW}*${Efficiency}"|bc -l`
     echo "${mems},${p},${q},${scheme},${N_sequential_read},${Npar},${Speedup},${Efficiency},${Extimated_BW},./schedules/${schedule}">>$output_file 
 done

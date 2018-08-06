@@ -302,6 +302,7 @@ function init_socketio() {
             
             socket.on('gen_schedule_analysis_done',function(msg){
                     console.log('=== received schedule analysis');
+                    console.log(msg);
                     
             });
             socket.on('selected_project',function(msg){
