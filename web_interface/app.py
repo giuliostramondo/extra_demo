@@ -8,6 +8,7 @@ from prf_utils import parseATrace, find_plot_dimension
 import json
 import subprocess
 import threading
+import csv
 
 def popenAndCall(socketio_,onExit,stdout_file, popenArgs):
     """
@@ -159,7 +160,16 @@ def gen_schedule_analysis():
     os.system("cd "+project_path+"; ../../../performance_prediction/generate_analysis_webapp.sh  current_input_no_includes > schedule_analysis_out")
     with open(project_path+"/schedule_analysis_out") as f:
         schedule_analysis_out = f.read()
-    with open(project_path+"/current_input_no_includes.analysis") as f:
+    
+    with open(project_path+"/current_input_no_includes.analysis","rb") as f:
+        reader = csv.reader(f)
+    #    #Removing schedule file column
+        with open(project_path+"/current_input_no_includes_noschedule_col.analysis","wb") as result:
+            writer = csv.writer(result)
+            for r in reader:
+                writer.writerow( ( r[0], r[1], r[2], r[3], r[4],r[5],r[6],r[7],r[8]) )
+
+    with open(project_path+"/current_input_no_includes_noschedule_col.analysis") as f:
         schedule_analysis = f.read()
         
     emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':schedule_analysis})
