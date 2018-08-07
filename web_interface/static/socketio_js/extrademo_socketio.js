@@ -251,10 +251,14 @@ function init_socketio() {
 
             socket.on('my_projects',function(msg){
                 $('#log').append('<br>' + $('<div/>').text('Received projects #' + msg.projects ).html());
+                    $('#project_list').html("");
                 for ( var i in msg.projects){
                     current=msg.projects[i]
                     $('#project_list').append('<option value='+current+'>'+current+'</option>');
                     console.log(current);
+                }
+                if  (!(msg.selected_project=='not set')){
+                    $('#project_list').val(msg.selected_project);
                 }
                 console.log(msg);
                     });
@@ -334,7 +338,11 @@ function init_socketio() {
                     $('#performance_prediction_output').prepend(card);
             });
             socket.on('selected_project',function(msg){
+                    
+                    socket.emit('load_projects');
                     console.log(msg.code);
+                    //wipe project contents
+                    $(".project_data").html("");
                     var title = 'View Code';
                     var content ='<div id="editor">'+escapeHTML(msg.code)+'</div>'+ 
                     `
@@ -372,6 +380,13 @@ function init_socketio() {
 
             $('form#select_project').submit(function(event){
                 socket.emit('select_project', {project: $('#project_list').val()});
+                return false;
+                    });
+
+            $('form#create_project').submit(function(event){
+                //TODO check name
+                socket.emit('create_project',
+                    {project_name:$('#create_project_name_input').val()});
                 return false;
                     });
         }

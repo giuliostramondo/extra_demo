@@ -3,6 +3,7 @@ from threading import Lock
 from flask import Flask, render_template, session, request,url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
+from shutil import copyfile
 import os
 from prf_utils import parseATrace, find_plot_dimension 
 import json
@@ -139,7 +140,7 @@ def test_connect():
 @socketio.on('load_projects', namespace='/test')
 def load_project():
     dirs=os.listdir('./projects')
-    emit('my_projects', { 'projects': dirs})
+    emit('my_projects', { 'projects': dirs,'selected_project': session.get('selected_project','not set')})
 
 
 @socketio.on('select_project', namespace='/test')
@@ -147,6 +148,74 @@ def select_project(message):
     with open("projects/"+message['project']+"/current_input.c") as f: 
         s = f.read() 
     session['selected_project']=message['project']
+    emit('selected_project',
+            {'selected_project': session.get('selected_project','not set'),'code':s})
+    #check if analysis data are available
+    project_path="projects/"+message['project']
+    analysis_data=[project_path+'/current_input_no_includes.atrace',
+                   project_path+'/current_input_no_includes.loop_info',
+                   project_path+'/current_input_no_includes.vec_info',
+                   project_path+'/current_input_no_includes.vec_size_info'
+                    ] 
+    for analysis_file in analysis_data:
+        if not os.path.isfile(analysis_file):
+            return
+    x=[]
+    y=[]
+    z=[]
+    concurrentAccessList=parseATrace(project_path+'/current_input_no_includes.atrace')
+    print "checking plot dimensions"
+    dimensions = find_plot_dimension(concurrentAccessList)
+    
+    # The conversion to set makes the for loop way faster 
+    concurrentAccessSet=set(concurrentAccessList[0])
+    print "generating heatmap data to plot"
+    for i in range(0,dimensions[0]):
+        for j in range(0,dimensions[1]):
+            x.append(i);
+            y.append(j);
+            if (i,j) in concurrentAccessSet:
+                z.append(1);
+            else:
+                z.append(0);
+
+    with open(project_path+'/current_input_no_includes.loop_info') as f:
+        loop_info = json.load(f) 
+
+    with open(project_path+'/current_input_no_includes.vec_info') as f:
+        vec_access_info = json.load(f)    
+
+    with open(project_path+'/current_input_no_includes.vec_size_info') as f:
+        vec_size_info = json.load(f)       
+    
+    print "emitting data"
+    emit('analysis_output',
+            {'parser_out': '', 
+                'data':{'x': y, 'y':x,'z':z,
+                'showscale' :False,'type':'heatmap','xgap':1,'ygap':1,
+                'colorscale': [
+                    [0, 'rgb(0, 0, 0)'],
+                    [1, 'rgb(255, 255, 255)']],
+                'colorbar': {
+                    'tick0':0,
+                    'dtick':1,
+                    'tickvals':[0,1],
+                    'ticktext':['Not accessed','Accessed']
+                    }},
+                'loop_info':loop_info,
+                'vec_access_info':vec_access_info,
+                'vec_size_info': vec_size_info
+            })
+
+@socketio.on('create_project', namespace='/test')
+def create_project(message):
+    project_name=message['project_name']
+    session['selected_project']=project_name
+    if not os.path.exists("projects/"+project_name):
+        os.makedirs("projects/"+project_name)
+        copyfile("../current_input.c","projects/"+project_name+"/current_input.c")
+    with open("projects/"+project_name+"/current_input.c") as f: 
+        s = f.read()
     emit('selected_project',
             {'selected_project': session.get('selected_project','not set'),'code':s})
 
@@ -168,7 +237,7 @@ def gen_schedule_analysis():
     
     with open(project_path+"/current_input_no_includes.analysis","rb") as f:
         reader = csv.reader(f)
-    #    #Removing schedule file column
+       #Update schedule file column
         with open(project_path+"/current_input_no_includes_noschedule_col.analysis","wb") as result:
             writer = csv.writer(result)
             first_row=True
