@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from threading import Lock
-from flask import Flask, render_template, session, request
+from flask import Flask, render_template, session, request,url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 import os
@@ -166,10 +166,23 @@ def gen_schedule_analysis():
     #    #Removing schedule file column
         with open(project_path+"/current_input_no_includes_noschedule_col.analysis","wb") as result:
             writer = csv.writer(result)
+            first_row=True
             for r in reader:
-                writer.writerow( ( r[0], r[1], r[2], r[3], r[4],r[5],r[6],r[7],r[8]) )
+
+                if first_row:
+                    writer.writerow( ( r[0], r[1], r[2], r[3], r[4],r[5],r[6],r[7],
+                        r[8], r[9]) )
+                    first_row=False
+                else:
+                    schedule_file = r[9].split('/')[-1]
+                    abs_path_to_schedule_file=project_path+"/"+schedule_file
+                    url_to_schedule_file="<a href="+url_for('static',
+                            filename=abs_path_to_schedule_file) +">"+"get schedule</a>"
+                    writer.writerow( ( r[0], r[1], r[2], r[3], r[4],r[5],r[6],r[7],
+                        r[8], url_to_schedule_file) )
 
     with open(project_path+"/current_input_no_includes_noschedule_col.analysis") as f:
+    #with open(project_path+"/current_input_no_includes.analysis") as f:
         schedule_analysis = f.read()
         
     emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':schedule_analysis})

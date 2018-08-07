@@ -38,6 +38,25 @@ function create_inner_card( title, content )
    return card_html_code;
 }
 
+function csv_to_html_table( data ){
+            var lines = data.split("\n");
+            var output = [];
+            for (i = 0; i < lines.length; i++)
+                if (!(lines[i] === "")){
+                    if(i==0){
+                    output.push("<tr><th>"
+                    + lines[i].slice(0,-1).split(",").join("</th><th>")
+                    + "</th></tr>");
+                    }else{
+                     output.push("<tr><td>"
+                    + lines[i].slice(0,-1).split(",").join("</td><td>")
+                    + "</td></tr>");                           
+                    }
+                }
+            output = "<table>" + output.join("") + "</table>";
+            return output;
+}
+
 function create_loop_info_string( loop_info )
 {
             var loop_info_string="<div>Polymem's loop contains "+
@@ -303,24 +322,14 @@ function init_socketio() {
             socket.on('gen_schedule_analysis_done',function(msg){
                     console.log('=== received schedule analysis');
                     console.log(msg);
-                    data=msg.analysis;
                     title="Performance Prediction";
-                    var lines = data.split("\n");
-                    var output = [];
-                    for (i = 0; i < lines.length; i++)
-                        if (!(lines[i] === "")){
-                            if(i==0){
-                            output.push("<tr><th>"
-                            + lines[i].slice(0,-1).split(",").join("</th><th>")
-                            + "</th></tr>");
-                            }else{
-                             output.push("<tr><td>"
-                            + lines[i].slice(0,-1).split(",").join("</td><td>")
-                            + "</td></tr>");                           
-                            }
-                        }
-                    output = "<table>" + output.join("") + "</table>"; 
-                    var card = create_card(title,output);
+                    data=msg.analysis;
+                    output = csv_to_html_table(data);
+                    perf_table_card= 
+                        create_inner_card(
+                                "Speedup, Efficiency, Expected Bandwidth",
+                                output);
+                    var card = create_card(title,perf_table_card);
                     $('#performance_prediction_output').html("");
                     $('#performance_prediction_output').prepend(card);
             });
