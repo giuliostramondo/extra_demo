@@ -10,6 +10,10 @@ import subprocess
 import threading
 import csv
 
+#if this is set to true the performance prediction will show cached Results
+#useful for speeding up test, set to false in production
+debug_perf_prediction=True
+
 def popenAndCall(socketio_,onExit,stdout_file, popenArgs):
     """
     Runs the given args in a subprocess.Popen, and then calls the function
@@ -19,10 +23,11 @@ def popenAndCall(socketio_,onExit,stdout_file, popenArgs):
     """
     def runInThread(socketio_,onExit, stdout_file, popenArgs):
         print " ===== thread args"+str(popenArgs)+"+++++++"
-        #proc = subprocess.Popen(*popenArgs, shell=True, bufsize=0, stdout=stdout_file)
-        #proc.wait()
-        
-        socketio_.sleep(3)
+        if not debug_perf_prediction:
+            proc = subprocess.Popen(*popenArgs, shell=True, bufsize=0, stdout=stdout_file)
+            proc.wait()
+        else: 
+            socketio_.sleep(3)
         onExit(socketio_)
         stdout_file.close()
         return
@@ -171,15 +176,15 @@ def gen_schedule_analysis():
 
                 if first_row:
                     writer.writerow( ( r[0], r[1], r[2], r[3], r[4],r[5],r[6],r[7],
-                        r[8], r[9]) )
+                        r[8], r[9], r[10]) )
                     first_row=False
                 else:
-                    schedule_file = r[9].split('/')[-1]
+                    schedule_file = r[10].split('/')[-1]
                     abs_path_to_schedule_file=project_path+"/"+schedule_file
                     url_to_schedule_file="<a href="+url_for('static',
                             filename=abs_path_to_schedule_file) +">"+"get schedule</a>"
                     writer.writerow( ( r[0], r[1], r[2], r[3], r[4],r[5],r[6],r[7],
-                        r[8], url_to_schedule_file) )
+                        r[8],r[9], url_to_schedule_file) )
 
     with open(project_path+"/current_input_no_includes_noschedule_col.analysis") as f:
     #with open(project_path+"/current_input_no_includes.analysis") as f:

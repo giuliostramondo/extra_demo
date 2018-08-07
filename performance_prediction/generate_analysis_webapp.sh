@@ -15,7 +15,7 @@ declare -A bw_csv_rows_mem=( ["8"]=2 ["16"]=3 )
 file_name_stem=$1
 output_file=${file_name_stem}.analysis
 N_sequential_read=`cat ${file_name_stem}.atrace | sed -E "s/,/\n/g"| wc -l`
-echo "Memories,P,Q,Scheme,N_sequential_read,N_parallel_read,Speedup,Efficiency,Extimated_BW,schedule_file">$output_file
+echo "Memories,P,Q,Scheme,N_sequential_read,N_parallel_read,Speedup,Efficiency,Extimated BW (GB/s),Extimated Frequency (MHz),schedule_file">$output_file
 for schedule in $(ls . | grep schedule$); do 
     echo "this is i -> "$schedule 
     info=(`echo $schedule | sed "s/${file_name_stem}_\(.*\)_\([0-9]\+\)mems_p\([0-9]\+\)_q\([0-9]\+\).*/\1 \2 \3 \4/"`)
@@ -33,8 +33,9 @@ for schedule in $(ls . | grep schedule$); do
     echo "${bw_csv_columns_scheme[${scheme}]}" 
 
     Theoretical_BW=`read_csv_cell ../../../performance_prediction/polymem_theoretical_bw.csv ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}`
+    Extimated_Freq=`read_csv_cell ../../../performance_prediction/polymem_theoretical_freq.csv ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}`
     Extimated_BW=`echo "scale=2;${Theoretical_BW}*${Efficiency}"|bc -l`
-    echo "${mems},${p},${q},${scheme},${N_sequential_read},${Npar},${Speedup},${Efficiency},${Extimated_BW},./schedules/${schedule}">>$output_file 
+    echo "${mems},${p},${q},${scheme},${N_sequential_read},${Npar},${Speedup},${Efficiency},${Extimated_BW},${Extimated_Freq},./schedules/${schedule}">>$output_file 
 done
 #for mems in 8 16; do
 #    for scheme in ReRo ReCo RoCo ReTr;do
