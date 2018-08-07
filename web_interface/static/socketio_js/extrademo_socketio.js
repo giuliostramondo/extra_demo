@@ -303,7 +303,26 @@ function init_socketio() {
             socket.on('gen_schedule_analysis_done',function(msg){
                     console.log('=== received schedule analysis');
                     console.log(msg);
-                    
+                    data=msg.analysis;
+                    title="Performance Prediction";
+                    var lines = data.split("\n");
+                    var output = [];
+                    for (i = 0; i < lines.length; i++)
+                        if (!(lines[i] === "")){
+                            if(i==0){
+                            output.push("<tr><th>"
+                            + lines[i].slice(0,-1).split(",").join("</th><th>")
+                            + "</th></tr>");
+                            }else{
+                             output.push("<tr><td>"
+                            + lines[i].slice(0,-1).split(",").join("</td><td>")
+                            + "</td></tr>");                           
+                            }
+                        }
+                    output = "<table>" + output.join("") + "</table>"; 
+                    var card = create_card(title,output);
+                    $('#performance_prediction_output').html("");
+                    $('#performance_prediction_output').prepend(card);
             });
             socket.on('selected_project',function(msg){
                     console.log(msg.code);
