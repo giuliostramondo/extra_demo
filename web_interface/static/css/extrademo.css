@@ -53,3 +53,10 @@
         th,td {
             text-align: center;
         }
+        
+        /* Prevents appearing and disappearing of the scrollbar from
+            changing the page width */
+        html {
+            margin-left: calc(100vw - 100%);
+            margin-right: 0;
+        }
