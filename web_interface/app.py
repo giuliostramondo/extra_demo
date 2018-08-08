@@ -142,24 +142,7 @@ def load_project():
     dirs=os.listdir('./projects')
     emit('my_projects', { 'projects': dirs,'selected_project': session.get('selected_project','not set')})
 
-
-@socketio.on('select_project', namespace='/test')
-def select_project(message):
-    with open("projects/"+message['project']+"/current_input.c") as f: 
-        s = f.read() 
-    session['selected_project']=message['project']
-    emit('selected_project',
-            {'selected_project': session.get('selected_project','not set'),'code':s})
-    #check if analysis data are available
-    project_path="projects/"+message['project']
-    analysis_data=[project_path+'/current_input_no_includes.atrace',
-                   project_path+'/current_input_no_includes.loop_info',
-                   project_path+'/current_input_no_includes.vec_info',
-                   project_path+'/current_input_no_includes.vec_size_info'
-                    ] 
-    for analysis_file in analysis_data:
-        if not os.path.isfile(analysis_file):
-            return
+def send_analysis_results(project_path):
     x=[]
     y=[]
     z=[]
@@ -179,6 +162,9 @@ def select_project(message):
             else:
                 z.append(0);
 
+    with open(project_path+'/parser_out','r') as f:
+        parser_out = f.read()
+
     with open(project_path+'/current_input_no_includes.loop_info') as f:
         loop_info = json.load(f) 
 
@@ -190,7 +176,7 @@ def select_project(message):
     
     print "emitting data"
     emit('analysis_output',
-            {'parser_out': '', 
+            {'parser_out': parser_out, 
                 'data':{'x': y, 'y':x,'z':z,
                 'showscale' :False,'type':'heatmap','xgap':1,'ygap':1,
                 'colorscale': [
@@ -206,6 +192,48 @@ def select_project(message):
                 'vec_access_info':vec_access_info,
                 'vec_size_info': vec_size_info
             })
+
+def send_performance_results( project_path ):    
+    with open(project_path+"/schedule_analysis_out") as f:
+        schedule_analysis_out = f.read()
+    with open(project_path+"/current_input_no_includes_noschedule_col.analysis") as f:
+    #with open(project_path+"/current_input_no_includes.analysis") as f:
+        schedule_analysis = f.read()
+    emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':schedule_analysis})
+ 
+#ordered list of phases
+phase_list = ['analysis','performance_pred']
+#for each phase a tuple containing the list of required files and function to call to update
+#the respective client "card"
+phases_data={'analysis':(['/current_input_no_includes.atrace',
+                   '/current_input_no_includes.loop_info',
+                   '/current_input_no_includes.vec_info',
+                   '/current_input_no_includes.vec_size_info'
+                    ],send_analysis_results),
+             'performance_pred':(["/current_input_no_includes_noschedule_col.analysis",
+                    "/schedule_analysis_out"],
+                      send_performance_results)
+            }
+
+@socketio.on('select_project', namespace='/test')
+def select_project(message):
+    with open("projects/"+message['project']+"/current_input.c") as f: 
+        s = f.read() 
+    session['selected_project']=message['project']
+    emit('selected_project',
+            {'selected_project': session.get('selected_project','not set'),'code':s})
+    #check if analysis data are available
+    project_path="projects/"+message['project']
+    for phase in phase_list:
+        print "Checking if data for "+phase+" are available"
+        for required_file in phases_data[phase][0]:
+            if not os.path.isfile(project_path+required_file):
+                print required_file+" is NOT available, not loading "+phase
+                return
+            print required_file+" is available"
+        print "Data available,sending data over"
+        phases_data[phase][1](project_path)
+            
 
 @socketio.on('create_project', namespace='/test')
 def create_project(message):
@@ -225,15 +253,13 @@ def perf_prediction_done(socketio_):
     socketio_.emit('done_performance_prediction',{'threads': 4},
                       namespace='/test')
 
-
 @socketio.on('gen_schedule_analysis', namespace='/test')
 def gen_schedule_analysis():
     print "generating schedule analysis"
     project=session.get('selected_project','not set')
     project_path="projects/"+project
     os.system("cd "+project_path+"; ../../../performance_prediction/generate_analysis_webapp.sh  current_input_no_includes > schedule_analysis_out")
-    with open(project_path+"/schedule_analysis_out") as f:
-        schedule_analysis_out = f.read()
+
     
     with open(project_path+"/current_input_no_includes.analysis","rb") as f:
         reader = csv.reader(f)
@@ -255,11 +281,7 @@ def gen_schedule_analysis():
                     writer.writerow( ( r[0], r[1], r[2], r[3], r[4],r[5],r[6],r[7],
                         r[8],r[9], url_to_schedule_file) )
 
-    with open(project_path+"/current_input_no_includes_noschedule_col.analysis") as f:
-    #with open(project_path+"/current_input_no_includes.analysis") as f:
-        schedule_analysis = f.read()
-        
-    emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':schedule_analysis})
+    send_performance_results( project_path )
  
 @socketio.on('performance_prediction', namespace='/test')
 def performance_prediction(message):
@@ -287,6 +309,8 @@ def performance_prediction(message):
         #                   ./performance_prediction/generate_analysis.sh $(INPUT_FILE_STEM)_no_header
 
     emit('started_performance_prediction',{'threads': 4})
+
+
 
 @socketio.on('analyze_code', namespace='/test')
 def analyze_code(message):
@@ -316,55 +340,54 @@ def analyze_code(message):
     with open(project_path+'/parser_out','r') as f:
         parser_out = f.read()
     print "parser_done"
-
-    os.remove(project_path+'/parser_out')
-    x=[]
-    y=[]
-    z=[]
-    print "parsing atrace"
-    concurrentAccessList=parseATrace(project_path+'/current_input_no_includes.atrace')
-    print "checking plot dimensions"
-    dimensions = find_plot_dimension(concurrentAccessList)
-    
-    # The conversion to set makes the for loop way faster 
-    concurrentAccessSet=set(concurrentAccessList[0])
-    print "generating heatmap data to plot"
-    for i in range(0,dimensions[0]):
-        for j in range(0,dimensions[1]):
-            x.append(i);
-            y.append(j);
-            if (i,j) in concurrentAccessSet:
-                z.append(1);
-            else:
-                z.append(0);
-
-    with open(project_path+'/current_input_no_includes.loop_info') as f:
-        loop_info = json.load(f) 
-
-    with open(project_path+'/current_input_no_includes.vec_info') as f:
-        vec_access_info = json.load(f)    
-
-    with open(project_path+'/current_input_no_includes.vec_size_info') as f:
-        vec_size_info = json.load(f)       
-    
-    print "emitting data"
-    emit('analysis_output',
-            {'parser_out': parser_out, 
-                'data':{'x': y, 'y':x,'z':z,
-                'showscale' :False,'type':'heatmap','xgap':1,'ygap':1,
-                'colorscale': [
-                    [0, 'rgb(0, 0, 0)'],
-                    [1, 'rgb(255, 255, 255)']],
-                'colorbar': {
-                    'tick0':0,
-                    'dtick':1,
-                    'tickvals':[0,1],
-                    'ticktext':['Not accessed','Accessed']
-                    }},
-                'loop_info':loop_info,
-                'vec_access_info':vec_access_info,
-                'vec_size_info': vec_size_info
-            })
+    send_analysis_results(project_path)
+#    x=[]
+#    y=[]
+#    z=[]
+#    print "parsing atrace"
+#    concurrentAccessList=parseATrace(project_path+'/current_input_no_includes.atrace')
+#    print "checking plot dimensions"
+#    dimensions = find_plot_dimension(concurrentAccessList)
+#    
+#    # The conversion to set makes the for loop way faster 
+#    concurrentAccessSet=set(concurrentAccessList[0])
+#    print "generating heatmap data to plot"
+#    for i in range(0,dimensions[0]):
+#        for j in range(0,dimensions[1]):
+#            x.append(i);
+#            y.append(j);
+#            if (i,j) in concurrentAccessSet:
+#                z.append(1);
+#            else:
+#                z.append(0);
+#
+#    with open(project_path+'/current_input_no_includes.loop_info') as f:
+#        loop_info = json.load(f) 
+#
+#    with open(project_path+'/current_input_no_includes.vec_info') as f:
+#        vec_access_info = json.load(f)    
+#
+#    with open(project_path+'/current_input_no_includes.vec_size_info') as f:
+#        vec_size_info = json.load(f)       
+#    
+#    print "emitting data"
+#    emit('analysis_output',
+#            {'parser_out': parser_out, 
+#                'data':{'x': y, 'y':x,'z':z,
+#                'showscale' :False,'type':'heatmap','xgap':1,'ygap':1,
+#                'colorscale': [
+#                    [0, 'rgb(0, 0, 0)'],
+#                    [1, 'rgb(255, 255, 255)']],
+#                'colorbar': {
+#                    'tick0':0,
+#                    'dtick':1,
+#                    'tickvals':[0,1],
+#                    'ticktext':['Not accessed','Accessed']
+#                    }},
+#                'loop_info':loop_info,
+#                'vec_access_info':vec_access_info,
+#                'vec_size_info': vec_size_info
+#            })
   
 
 @socketio.on('disconnect', namespace='/test')
