@@ -259,6 +259,14 @@ function init_socketio() {
                 }
                 if  (!(msg.selected_project=='not set')){
                     $('#project_list').val(msg.selected_project);
+                    if(!(msg.selected_project=="dummy_project")){
+                        $('#delete_project').css("visibility", "visible");
+                    }else{
+                        $('#delete_project').css("visibility", "hidden");
+                    }
+                }else{
+                        $('#delete_project').css("visibility", "hidden");
+
                 }
                 console.log(msg);
                     });
@@ -371,8 +379,26 @@ function init_socketio() {
                         return false;
                     });
                     });
-
-
+            
+            socket.on('created_project',function(msg){
+                if(msg.error=='none'){
+                    //close modal
+                    $('#exampleModalCenter').modal('hide');
+                }else{
+                    //display error in modal
+                    $('#create_project_modal_error').html(msg.error);
+                }
+            });
+            socket.on('flush_card',function(msg){
+                if(msg.card == 'analysis'){
+                    console.log('flushing analysis');
+                    $('#analysis_output').html("");
+                }
+                if(msg.card == 'performance_pred'){
+                    console.log('flushing perf pred');
+                    $('#performance_prediction_output').html("");
+                }
+            });
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a
             // variety of ways
@@ -386,6 +412,13 @@ function init_socketio() {
             $('form#create_project').submit(function(event){
                 //TODO check name
                 socket.emit('create_project',
+                    {project_name:$('#create_project_name_input').val()});
+                return false;
+                    });
+            $('form#delete_project').submit(function(event){
+                //TODO check name
+                console.log("called delete project with arg " + $('#create_project_name_input').val());
+                socket.emit('delete_project',
                     {project_name:$('#create_project_name_input').val()});
                 return false;
                     });

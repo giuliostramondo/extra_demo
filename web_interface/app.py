@@ -3,7 +3,7 @@ from threading import Lock
 from flask import Flask, render_template, session, request,url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
-from shutil import copyfile
+from shutil import copyfile, rmtree
 import os
 from prf_utils import parseATrace, find_plot_dimension 
 import json
@@ -13,7 +13,7 @@ import csv
 
 #if this is set to true the performance prediction will show cached Results
 #useful for speeding up test, set to false in production
-debug_perf_prediction=True
+debug_perf_prediction=False
 
 def popenAndCall(socketio_,onExit,stdout_file, popenArgs):
     """
@@ -215,6 +215,18 @@ phases_data={'analysis':(['/current_input_no_includes.atrace',
                       send_performance_results)
             }
 
+def remove_stale_data( project_path, upgraded_card ):
+    remove_current=False
+    for phase in phase_list:
+        if phase == upgraded_card:
+            remove_current=True  
+        if remove_current:
+            for file_to_remove in phases_data[phase][0]:
+                if os.path.exists(project_path+file_to_remove):
+                    os.remove(project_path+file_to_remove) 
+            emit('flush_card',{'card':phase})
+   
+
 @socketio.on('select_project', namespace='/test')
 def select_project(message):
     with open("projects/"+message['project']+"/current_input.c") as f: 
@@ -234,6 +246,14 @@ def select_project(message):
         print "Data available,sending data over"
         phases_data[phase][1](project_path)
             
+@socketio.on('delete_project', namespace='/test')
+def delete_project(message):
+    print "Called delete_project with arg "+message['project_name']
+    project_name=message['project_name']
+    if os.path.exists("projects/"+project_name) and not project_name=="":
+        rmtree("projects/"+project_name)
+    session.pop('selected_project')
+    load_project() 
 
 @socketio.on('create_project', namespace='/test')
 def create_project(message):
@@ -242,10 +262,14 @@ def create_project(message):
     if not os.path.exists("projects/"+project_name):
         os.makedirs("projects/"+project_name)
         copyfile("../current_input.c","projects/"+project_name+"/current_input.c")
-    with open("projects/"+project_name+"/current_input.c") as f: 
-        s = f.read()
-    emit('selected_project',
+        emit('created_project',{'error':'none'});
+        with open("projects/"+project_name+"/current_input.c") as f: 
+            s = f.read()
+        emit('selected_project',
             {'selected_project': session.get('selected_project','not set'),'code':s})
+    else:
+        emit('created_project',{'error':'A project named '+project_name+' already_exists'});
+    
 
 def perf_prediction_done(socketio_):
     print "++++++ Performance prediction over ++++++"
@@ -288,25 +312,13 @@ def performance_prediction(message):
     print "called performance_prediction"
     project=session.get('selected_project','not set')
     project_path="projects/"+project
+    remove_stale_data( project_path, 'performance_pred')
     outfile = open(project_path+'/scheduler_out', 'w');
 
     popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReRo 2 4"])
     popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReCo 2 4"])
     popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace RoCo 2 4"])
     popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReTr 2 4"])
-   # status = subprocess.Popen(["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReRo 2 4"], shell=True, bufsize=0, stdout=outfile)
-
-    #os.system("cd "+project_path+
-    #        "; python ../../../performance_prediction/schedule_atrace.py  current_input_no_includes.atrace ReRo 2 4 > scheduler_out 2> scheduler_out")
-    #with open(project_path+'/scheduler_out','r') as f:
-    #    scheduler_out = f.read()
-  # python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReRo 2 4
-   #    python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReCo 2 4
-    #       python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace RoCo 2 4
-     #          python2.7 performance_prediction/schedule_atrace.py patterns/$(INPUT_FILE_STEM)_no_header.atrace ReTr 2 4
-      #             if [ ! -d "schedules" ];then mkdir schedules;fi
-       #                mv patterns/*.schedule schedules
-        #                   ./performance_prediction/generate_analysis.sh $(INPUT_FILE_STEM)_no_header
 
     emit('started_performance_prediction',{'threads': 4})
 
@@ -315,6 +327,7 @@ def performance_prediction(message):
 @socketio.on('analyze_code', namespace='/test')
 def analyze_code(message):
     print "called analyze_code"
+    
     code=message['source']
     project=session.get('selected_project','not set')
     print "currently selected project "+project
@@ -322,6 +335,7 @@ def analyze_code(message):
     source_filename=project_path+'/current_input.c'
     source_filename_no_includes=project_path+'/current_input_no_includes.c'
 
+    remove_stale_data( project_path, 'analysis' )
     with open(source_filename,"w") as f:
         f.write(code)
 
@@ -341,53 +355,7 @@ def analyze_code(message):
         parser_out = f.read()
     print "parser_done"
     send_analysis_results(project_path)
-#    x=[]
-#    y=[]
-#    z=[]
-#    print "parsing atrace"
-#    concurrentAccessList=parseATrace(project_path+'/current_input_no_includes.atrace')
-#    print "checking plot dimensions"
-#    dimensions = find_plot_dimension(concurrentAccessList)
-#    
-#    # The conversion to set makes the for loop way faster 
-#    concurrentAccessSet=set(concurrentAccessList[0])
-#    print "generating heatmap data to plot"
-#    for i in range(0,dimensions[0]):
-#        for j in range(0,dimensions[1]):
-#            x.append(i);
-#            y.append(j);
-#            if (i,j) in concurrentAccessSet:
-#                z.append(1);
-#            else:
-#                z.append(0);
-#
-#    with open(project_path+'/current_input_no_includes.loop_info') as f:
-#        loop_info = json.load(f) 
-#
-#    with open(project_path+'/current_input_no_includes.vec_info') as f:
-#        vec_access_info = json.load(f)    
-#
-#    with open(project_path+'/current_input_no_includes.vec_size_info') as f:
-#        vec_size_info = json.load(f)       
-#    
-#    print "emitting data"
-#    emit('analysis_output',
-#            {'parser_out': parser_out, 
-#                'data':{'x': y, 'y':x,'z':z,
-#                'showscale' :False,'type':'heatmap','xgap':1,'ygap':1,
-#                'colorscale': [
-#                    [0, 'rgb(0, 0, 0)'],
-#                    [1, 'rgb(255, 255, 255)']],
-#                'colorbar': {
-#                    'tick0':0,
-#                    'dtick':1,
-#                    'tickvals':[0,1],
-#                    'ticktext':['Not accessed','Accessed']
-#                    }},
-#                'loop_info':loop_info,
-#                'vec_access_info':vec_access_info,
-#                'vec_size_info': vec_size_info
-#            })
+
   
 
 @socketio.on('disconnect', namespace='/test')
