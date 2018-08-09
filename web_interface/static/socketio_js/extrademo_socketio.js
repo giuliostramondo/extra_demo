@@ -341,7 +341,13 @@ function init_socketio() {
                         create_inner_card(
                                 "Speedup, Efficiency, Expected Bandwidth",
                                 output);
-                    var card = create_card(title,perf_table_card);
+                    var content = perf_table_card;
+                    content+=`
+                    <br>
+                    <form id='generate_design' method='POST' action='#'>
+                        <input type="SUBMIT" value="Generate Design">
+                    </form>`;
+                    var card = create_card(title,content);
                     $('#performance_prediction_output').html("");
                     $('#performance_prediction_output').prepend(card);
             });
@@ -408,7 +414,10 @@ function init_socketio() {
                 socket.emit('select_project', {project: $('#project_list').val()});
                 return false;
                     });
-
+            $('form#generate_design').submit(function(event){
+                socket.emit('generate_design');
+                return false;
+            });
             $('form#create_project').submit(function(event){
                 //TODO check name
                 socket.emit('create_project',

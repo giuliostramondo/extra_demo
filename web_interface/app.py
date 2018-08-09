@@ -357,6 +357,13 @@ def analyze_code(message):
     send_analysis_results(project_path)
 
   
+@socketio.on('generate_design', namespace='/test')
+def generate_design(message):
+    os.system("cd "+project_path+
+            ";../../../generate_design/generate_cfg.sh 
+#cd generated_hardware_design;./generate_cfg.sh $(INPUT_FILE_STEM)_no_header;unzip PolyMemStream_ref.zip;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;./generate_prf_constants.sh $(INPUT_FILE_STEM)_no_header;python ./generate_kernel.py $(INPUT_FILE_STEM)_no_header;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/
+    
+    
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
