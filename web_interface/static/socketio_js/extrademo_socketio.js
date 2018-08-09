@@ -350,12 +350,18 @@ function init_socketio() {
                     var card = create_card(title,content);
                     $('#performance_prediction_output').html("");
                     $('#performance_prediction_output').prepend(card);
+                    $('form#generate_design').submit(function(event){
+                        socket.emit('generate_design');
+                        return false;
+                    });
             });
+            current_project=""
             socket.on('selected_project',function(msg){
                     
                     socket.emit('load_projects');
                     console.log(msg.code);
                     //wipe project contents
+                    current_project=msg.selected_project;
                     $(".project_data").html("");
                     var title = 'View Code';
                     var content ='<div id="editor">'+escapeHTML(msg.code)+'</div>'+ 
@@ -414,10 +420,9 @@ function init_socketio() {
                 socket.emit('select_project', {project: $('#project_list').val()});
                 return false;
                     });
-            $('form#generate_design').submit(function(event){
-                socket.emit('generate_design');
-                return false;
-            });
+
+            
+
             $('form#create_project').submit(function(event){
                 //TODO check name
                 socket.emit('create_project',
@@ -426,9 +431,12 @@ function init_socketio() {
                     });
             $('form#delete_project').submit(function(event){
                 //TODO check name
-                console.log("called delete project with arg " + $('#create_project_name_input').val());
+                console.log("called delete project with arg " + current_project);
                 socket.emit('delete_project',
-                    {project_name:$('#create_project_name_input').val()});
+                    {project_name:current_project});
+                current_project="";
+                
+                $(".project_data").html("");
                 return false;
                     });
         }

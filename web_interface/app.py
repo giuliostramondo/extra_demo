@@ -358,9 +358,19 @@ def analyze_code(message):
 
   
 @socketio.on('generate_design', namespace='/test')
-def generate_design(message):
+def generate_design():
+    project=session.get('selected_project','not set')
+    project_path="projects/"+project
+    #generate current_input_no_includes.cfg
     os.system("cd "+project_path+
-            ";../../../generate_design/generate_cfg.sh analysis_file_TODO")
+            ";../../../generated_hardware_design/generate_cfg_webapp.sh current_input_no_includes.analysis")
+    os.system("cd "+project_path+
+            ";cp ../../../generated_hardware_design/PolyMemStream_ref.zip .;unzip -o PolyMemStream_ref.zip;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;")
+    os.system("cd "+project_path+
+            ";../../../generated_hardware_design/generate_prf_constants_webapp.sh current_input_no_includes.cfg")
+    os.system("cd "+project_path+
+            ";python ../../../generated_hardware_design/generate_kernel.py current_input_no_includes;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/")
+
 #cd generated_hardware_design;./generate_cfg.sh $(INPUT_FILE_STEM)_no_header;unzip PolyMemStream_ref.zip;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;./generate_prf_constants.sh $(INPUT_FILE_STEM)_no_header;python ./generate_kernel.py $(INPUT_FILE_STEM)_no_header;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/
     
     
@@ -371,4 +381,4 @@ def test_disconnect():
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True,host='0.0.0.0')
