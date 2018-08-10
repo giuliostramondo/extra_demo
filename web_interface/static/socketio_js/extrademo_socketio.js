@@ -245,10 +245,12 @@ function init_socketio() {
             });
 
 
-            window.onload=function(){
+            //window.onload=function(){
+            //        socket.emit('load_projects');
+            //        };
+            $(document).ready(function(){
                     socket.emit('load_projects');
-                    };
-
+                    });
             socket.on('my_projects',function(msg){
                 $('#log').append('<br>' + $('<div/>').text('Received projects #' + msg.projects ).html());
                     $('#project_list').html("");
