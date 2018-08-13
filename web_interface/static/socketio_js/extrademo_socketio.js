@@ -245,9 +245,6 @@ function init_socketio() {
             });
 
 
-            //window.onload=function(){
-            //        socket.emit('load_projects');
-            //        };
             $(document).ready(function(){
                     socket.emit('load_projects');
                     });
