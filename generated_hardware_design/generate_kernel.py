@@ -200,7 +200,6 @@ kernel_maxj_code+="""         public DFEStruct getPRFInputs(Kernel kernel){
              CounterChain load_offload_counter_chain = kernel.control.count.makeCounterChain( (this.prfMode === PRFMode.LOAD.ordinal()) | (this.prfMode === PRFMode.OFFLOAD.ordinal()) );
              DFEVar vector_id = load_offload_counter_chain.addCounter(3,1).cast(dfeUInt(64));
              DFEVar elementCounter = load_offload_counter_chain.addCounter(this.vectorSize/this.lanes,1);
-             debug.simPrintf("vectorid: %d\\n",vector_id);
              DFEVar rowIndex_loadoffload=(elementCounter*this.lanes/PRFConstants.M)+(vector_id*170);
              DFEVar columnIndex_loadoffload=KernelMath.modulo(elementCounter*this.lanes,PRFConstants.M).cast(dfeUInt(64));
              DFEVar accType = kernel.constant.var(1).cast(dfeUInt(64));//ROW shape
@@ -281,7 +280,6 @@ kernel_maxj_code+="""
              DFEVar j= schedule.slice(8,9).cast(dfeUInt(9)).cast(dfeUInt(64));
              DFEVar i= schedule.slice(17,8).cast(dfeUInt(8)).cast(dfeUInt(64));
              DFEVar accType_compute = (scheduleSize >0 ) ? schedule.slice(25,3).cast(dfeUInt(3)).cast(dfeUInt(64)) : oneDfevar;
-             debug.simPrintf("schedule: %x,accType: %d, i : %d, j : %d , mask : %d\\n",schedule,accType_compute, i,j,mask);
              DFEVar rowIndex_copy_read= (scheduleSize > 0 )? i : (copy_elementCounter*this.lanes/PRFConstants.M);
              DFEVar columnIndex_copy_read=(scheduleSize>0) ? j : KernelMath.modulo(copy_elementCounter*this.lanes,PRFConstants.M).cast(dfeUInt(64));           
              //DFEVar rowIndex_copy_write= copy_elementCounter===0 ? zeroDfevar : stream.offset(rowIndex_copy_read,-1)+340;//added C vector offset
@@ -390,15 +388,6 @@ kernel_maxj_code+="""
          DFEVector<DFEVar> prf_input_data_loopback = interleavedFloatType.newInstance(this);
         prf_input_data = (prfMode === PRFMode.COMPUTE.ordinal() ) ? prf_input_data_loopback : prf_input_data;
         prf_input_data = (prfMode === PRFMode.LOAD.ordinal() |prfMode === PRFMode.OFFLOAD.ordinal()) ?prf_input_data: prf_input_data_loopback;
-         //Debugging
-          debug.simPrintf("tick %d input: %d %d %d | %d %d %d:",controls.iterationCounter, controls.readingA(),controls.readingB(),controls.readingC(), controls.outputA(), controls.outputB(),controls.outputC());
-         for(int i =0;i<p*q;i++)
-             debug.simPrintf("%f ",prf_input_data[i]);
-         debug.simPrintf("\\n");
-         debug.simPrintf("RowIndex: %d, ColumnIndex: %d, AccType:%d, WriteEnable: %d\\n",PRFInputs.get("RowIndex").cast(dfeInt(64)), PRFInputs.get("ColumnIndex").cast(dfeInt(64)), PRFInputs.get("AccType").cast(dfeInt(64)),PRFInputs.get("WriteEnable").cast(dfeInt(64)));
-         debug.simPrintf("RowIndexRead0: %d, ColumnIndexRead0: %d, AccTypeRead0:%d\\n",PRFInputs.get("index_i_read_0").cast(dfeInt(64)), PRFInputs.get("index_j_read_0").cast(dfeInt(64)), PRFInputs.get("acc_type_read_0").cast(dfeInt(64)));
-         debug.simPrintf("RowIndexRead1: %d, ColumnIndexRead1: %d, AccTypeRead1:%d\\n",PRFInputs.get("index_i_read_1").cast(dfeInt(64)), PRFInputs.get("index_j_read_1").cast(dfeInt(64)), PRFInputs.get("acc_type_read_1").cast(dfeInt(64)));
-         //END Debugging
  
          Hashtable<String, DFEVector<DFEVar>> prfMultiportOut = Utils.polyMem_multiport(this,PRFInputs,prf_input_data);
 """

@@ -1,6 +1,6 @@
 #include<stdio.h>
 
-int main(){
+int main(int argc, char* argv[]){
 int offset=5;
 int skip=3;
 int read=1;

@@ -22,6 +22,14 @@ class CodeInstrumenter:
     def add_include( self, string ):
         self.includes.append( string )
 
+    def wrap_and_parse_snippet(self,code,typedefs=[]):
+        code="int main(int argc, char* argv[]){\n"+code+"\n}\n"
+        for t in typedefs:
+            code="typedef int "+t+";\n"+code 
+        print code
+        node_ast = self.parser.parse(code)
+        return node_ast.ext[len(typedefs)].body.block_items
+
     def find_main_func(self):
         index=0
         for i in self.ast.ext:
@@ -47,43 +55,43 @@ class CodeInstrumenter:
             index+=1
         return -1
 
-    def insert_before_polymem_loop(self, string):
-        node_ast= self.parser.parse(string)
+    def insert_before_polymem_loop(self, string,typedefs=[]):
+        node_ast=self.wrap_and_parse_snippet(string,typedefs)
         index_polymem=self.find_polymem_loop()
         if index_polymem == -1:
             print "Error: Could not find Polymem loop"
         func_index=self.find_main_func()
-        self.ast.ext[func_index].body.block_items.insert(index_polymem,node_ast)
+        self.ast.ext[func_index].body.block_items[index_polymem:index_polymem]=node_ast
+ 
+    def insert_after_polymem_loop(self, string,typedefs=[]):
+        node_ast=self.wrap_and_parse_snippet(string,typedefs)
+        index_polymem=self.find_polymem_loop()
+        if index_polymem == -1:
+            print "Error: Could not find Polymem loop"
+        func_index=self.find_main_func()
+        self.ast.ext[func_index].body.block_items[index_polymem+2:index_polymem+2]=node_ast
+
+    def insert_inplaceof_polymem_loop(self, string, typedefs=[]):
+        node_ast=self.wrap_and_parse_snippet(string,typedefs)
+        index_polymem=self.find_polymem_loop()
+        if index_polymem == -1:
+            print "Error: Could not find Polymem loop"
+        func_index=self.find_main_func()
+        del self.ast.ext[func_index].body.block_items[index_polymem+1]
+        self.ast.ext[func_index].body.block_items[index_polymem+1:index_polymem+1]=node_ast       
     
-    def insert_after_polymem_loop(self, string):
-        node_ast= self.parser.parse(string)
-        index_polymem=self.find_polymem_loop()
-        if index_polymem == -1:
-            print "Error: Could not find Polymem loop"
+    def insert_beginning_of_main(self,string,typedefs=[]):
+        node_ast=self.wrap_and_parse_snippet(string,typedefs)
         func_index=self.find_main_func()
-        self.ast.ext[func_index].body.block_items.insert(index_polymem+2,node_ast)
-
-    def insert_inplaceof_polymem_loop(self, string):
-        node_ast= self.parser.parse(string)
-        index_polymem=self.find_polymem_loop()
-        if index_polymem == -1:
-            print "Error: Could not find Polymem loop"
-        func_index=self.find_main_func()
-        self.ast.ext[func_index].body.block_items[index_polymem+1]=node_ast       
-    
-    def insert_beginning_of_main(self,string):
-        node_ast= self.parser.parse(string)
-        func_index=self.find_main_func()
-        self.ast.ext[func_index].body.block_items.insert(0,node_ast)
-
-            
+        curr_ast=self.ast.ext[func_index].body.block_items
+        self.ast.ext[func_index].body.block_items=node_ast+curr_ast
 
 
-    def insert_end_of_main(self,string):
-        node_ast= self.parser.parse(string)
+    def insert_end_of_main(self,string,typedefs=[]):
+        node_ast=self.wrap_and_parse_snippet(string,typedefs)
         func_index=self.find_main_func()
         len_body=len(self.ast.ext[func_index].body.block_items)
-        self.ast.ext[func_index].body.block_items.insert(len_body,node_ast)
+        self.ast.ext[func_index].body.block_items+=node_ast
 
 
     def generate_code(self):
