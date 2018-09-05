@@ -252,7 +252,7 @@ def delete_project(message):
     project_name=message['project_name']
     if os.path.exists("projects/"+project_name) and not project_name=="":
         rmtree("projects/"+project_name)
-    session.pop('selected_project')
+    session['selected_project']=""
     load_project() 
 
 @socketio.on('create_project', namespace='/test')
@@ -371,7 +371,20 @@ def generate_design():
     os.system("cd "+project_path+
             ";python ../../../generated_hardware_design/generate_kernel.py current_input_no_includes;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/")
 
-#cd generated_hardware_design;./generate_cfg.sh $(INPUT_FILE_STEM)_no_header;unzip PolyMemStream_ref.zip;cp -r ./PolyMemStream_ref/ ./PolyMemStream_out;./generate_prf_constants.sh $(INPUT_FILE_STEM)_no_header;python ./generate_kernel.py $(INPUT_FILE_STEM)_no_header;mv PRFStreamKernel.maxj PolyMemStream_out/EngineCode/src/prfstream/
+    os.system("cd "+project_path+
+            ";python ../../../generated_hardware_design/generate_host_code.py current_input_no_includes.c current_input_no_includes.cfg current_input_no_includes.vec_info;mv PRFStreamCpuCode.c PolyMemStream_out/CPUCode")
+    os.system("cd "+project_path+
+            ";mv PolyMemStream_out PolyMemStream_out_no_synth; zip -r PolyMemStream_out_no_synth.zip PolyMemStream_out_no_synth")
+
+    os.system("cd "+project_path+
+            ";rm -rf PolyMemStream_ref;rm PolyMemStream_ref.zip")
+    with open(project_path+"/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",'r') as f:
+        generated_host_c=f.read()
+
+    abs_path_to_project_zip=project_path+"/PolyMemStream_out_no_synth.zip"
+    project_zip_url=url_for('static',
+                            filename=abs_path_to_project_zip)
+    emit('generate_design_done',{'generated_host_c': generated_host_c,'project_no_sinth_zip':project_zip_url})
     
     
 

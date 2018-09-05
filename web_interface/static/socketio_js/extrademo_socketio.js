@@ -354,6 +354,41 @@ function init_socketio() {
                         return false;
                     });
             });
+
+            socket.on('generate_design_done',function(msg){
+                    console.log('=== received project generation');
+                    console.log(msg)
+                    console.log(msg.generated_host_c);
+                    var title= "Generated Design";
+                    var content= '<div id="editorGenDesign">'+
+                            escapeHTML(msg.generated_host_c)+'</div>'+
+                    `
+                    <br>
+                    <form id='simulate_design' method='POST' action='#'>
+                        <input type="SUBMIT" value="Simulate Design">
+                    </form>
+                    <button class="btn"><i class="fa fa-download"></i>`+ 
+                        "<a href='"+msg.project_no_sinth_zip+"'>Download Maxeler Project</a>"+
+                    "</button>";
+                    var card = create_card(title,content); 
+                    // Remove old content
+                    $('#generated_design').html("");
+                    $('#generated_design').prepend(card);
+                     //Disable page scroll when on editor
+                    $('#editorGenDesign').mouseenter(function() {
+                            $("body").addClass("editor-active");}
+                        ).mouseleave(function() {
+                            $("body").removeClass("editor-active");});
+                    var editorGenDesign = ace.edit("editorGenDesign");
+                    editorGenDesign.setTheme("ace/theme/monokai");
+                    editorGenDesign.session.setMode("ace/mode/c_cpp");          
+                    $('form#simulate_design').submit(function(event){
+                        //socket.emit('analyze_code',{source: editor.getValue()});
+                        console.log(editor.getValue());
+                        return false;
+                    });
+            });
+
             current_project=""
             socket.on('selected_project',function(msg){
                     
