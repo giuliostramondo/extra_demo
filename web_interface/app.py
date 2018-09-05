@@ -200,9 +200,18 @@ def send_performance_results( project_path ):
     #with open(project_path+"/current_input_no_includes.analysis") as f:
         schedule_analysis = f.read()
     emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':schedule_analysis})
- 
+
+def send_design_generation_results(project_path):
+    with open(project_path+"/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",'r') as f:
+        generated_host_c=f.read()
+
+    abs_path_to_project_zip=project_path+"/PolyMemStream_out_no_synth.zip"
+    project_zip_url=url_for('static',
+                            filename=abs_path_to_project_zip)
+    emit('generate_design_done',{'generated_host_c': generated_host_c,'project_no_sinth_zip':project_zip_url})
+
 #ordered list of phases
-phase_list = ['analysis','performance_pred']
+phase_list = ['analysis','performance_pred','design_generation']
 #for each phase a tuple containing the list of required files and function to call to update
 #the respective client "card"
 phases_data={'analysis':(['/current_input_no_includes.atrace',
@@ -212,7 +221,10 @@ phases_data={'analysis':(['/current_input_no_includes.atrace',
                     ],send_analysis_results),
              'performance_pred':(["/current_input_no_includes_noschedule_col.analysis",
                     "/schedule_analysis_out"],
-                      send_performance_results)
+                      send_performance_results),
+             'design_generation':(["/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",
+                "/PolyMemStream_out_no_synth.zip"],
+                send_design_generation_results)
             }
 
 def remove_stale_data( project_path, upgraded_card ):
@@ -378,15 +390,11 @@ def generate_design():
 
     os.system("cd "+project_path+
             ";rm -rf PolyMemStream_ref;rm PolyMemStream_ref.zip")
-    with open(project_path+"/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",'r') as f:
-        generated_host_c=f.read()
+    send_design_generation_results(project_path)
+    
+    
 
-    abs_path_to_project_zip=project_path+"/PolyMemStream_out_no_synth.zip"
-    project_zip_url=url_for('static',
-                            filename=abs_path_to_project_zip)
-    emit('generate_design_done',{'generated_host_c': generated_host_c,'project_no_sinth_zip':project_zip_url})
-    
-    
+
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():

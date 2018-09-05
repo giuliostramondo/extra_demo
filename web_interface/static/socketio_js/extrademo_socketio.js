@@ -364,11 +364,13 @@ function init_socketio() {
                             escapeHTML(msg.generated_host_c)+'</div>'+
                     `
                     <br>
-                    <form id='simulate_design' method='POST' action='#'>
+                    <form id='simulate_design' method='POST' action='#' style='display:inline;'>
                         <input type="SUBMIT" value="Simulate Design">
+
                     </form>
-                    <button class="btn"><i class="fa fa-download"></i>`+ 
-                        "<a href='"+msg.project_no_sinth_zip+"'>Download Maxeler Project</a>"+
+                    <button class="btn-dl"><i class="fa fa-download"></i>`+ 
+                        "<a href='"+msg.project_no_sinth_zip+
+                        "' style='color: inherit;text-decoration: inherit;'> Download Maxeler Project</a>"+
                     "</button>";
                     var card = create_card(title,content); 
                     // Remove old content
