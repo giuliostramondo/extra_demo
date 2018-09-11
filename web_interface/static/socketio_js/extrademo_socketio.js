@@ -446,9 +446,51 @@ function init_socketio() {
                     $('#performance_prediction_output').html("");
                 }
             });
+            socket.on('sim_verification_done',function(){
+                console.log('sim verification done, asking data');
+                socket.emit('send_sim_data',{project: $('#project_list').val()});
+                return false;
+            });
             socket.on('sim_verification',function(msg){
-                console.log("=== verification compleate");
+                console.log("data revceived");
                 console.log(msg);
+                var title="Validation Results";
+                var validation_outcome="<font color='green'>Succeded</font>";
+                if(msg.validation_result != 0){
+                    validation_outcome="<font color='red'>Failed</font>";
+                }
+                var content = "<b>Simulation "+validation_outcome+" </b><br><br>";
+                var next_card_trigger=`
+                    <br>
+                    <form id='synthesize_design' method='POST' action='#' style='display:inline;'>
+                        <input type="SUBMIT" value="Synthesize Design">
+                    </form>`;
+                var dl_c_dump='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
+                        "<a href='"+msg.c_source_dump+
+                        "' style='color: inherit;text-decoration: inherit;'> Download C Vector Dump</a>"+
+                    "</button> ";                   
+                var dl_dfe_dump='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
+                        "<a href='"+msg.dfe_host_dump+
+                        "' style='color: inherit;text-decoration: inherit;'> Download DFE Vector Dump</a> "+
+                    "</button>";    
+                var dl_diff=' <button class="btn-dl"><i class="fa fa-download"></i>'+ 
+                        "<a href='"+msg.c_source_vs_dfe_host_dump+
+                        "' style='color: inherit;text-decoration: inherit;'> Download C vs DFE diff</a>"+
+                    "</button>";
+                content+=dl_c_dump;
+                if (msg.validation_result!=0){
+                    content+=dl_dfe_dump;
+                    content+=dl_diff;
+                }
+                var card=create_card(title,content);
+                $('#simulation').html("");
+                $('#simulation').prepend(card);
+
+                $('form#synthesize_design').submit(function(event){
+                        socket.emit('synthesize_design');
+                        return false;
+                    });
+                return false; 
             });
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a

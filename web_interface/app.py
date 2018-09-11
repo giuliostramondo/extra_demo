@@ -210,8 +210,28 @@ def send_design_generation_results(project_path):
                             filename=abs_path_to_project_zip)
     emit('generate_design_done',{'generated_host_c': generated_host_c,'project_no_sinth_zip':project_zip_url})
 
+@socketio.on('send_sim_data', namespace='/test')
+def send_sim_data( project_path="" ):
+    print "Called send_sim_data"
+    if project_path=="":
+        project=session.get('selected_project','not set')
+        project_path="projects/"+project 
+    num_diff_lines=sum(1 for line in open(project_path+"/c_source_vs_dfe_host_dump.diff"))
+    c_source_dump_path=project_path+"/c_source_vec.dump"
+    c_source_dump_url=url_for('static',
+                            filename=c_source_dump_path)
+    dfe_host_dump_path=project_path+"/dfe_host_vec.dump"
+    dfe_host_dump_url=url_for('static',
+                            filename=dfe_host_dump_path)
+    diff_dump_path=project_path+"/c_source_vs_dfe_host_dump.diff"
+    diff_dump_url=url_for('static',
+                            filename=diff_dump_path)
+    print "emitting"
+    emit('sim_verification',{'validation_result':num_diff_lines,'c_source_dump':c_source_dump_url,'dfe_host_dump':dfe_host_dump_url,'c_source_vs_dfe_host_dump':diff_dump_url});
+
+    
 #ordered list of phases
-phase_list = ['analysis','performance_pred','design_generation']
+phase_list = ['analysis','performance_pred','design_generation',"simulation"]
 #for each phase a tuple containing the list of required files and function to call to update
 #the respective client "card"
 phases_data={'analysis':(['/current_input_no_includes.atrace',
@@ -224,7 +244,11 @@ phases_data={'analysis':(['/current_input_no_includes.atrace',
                       send_performance_results),
              'design_generation':(["/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",
                 "/PolyMemStream_out_no_synth.zip"],
-                send_design_generation_results)
+                send_design_generation_results),
+             'simulation':(["/c_source_vs_dfe_host_dump.diff",
+                 "/c_source_vec.dump",
+                 "/dfe_host_vec.dump"],
+                send_sim_data)
             }
 
 def remove_stale_data( project_path, upgraded_card ):
@@ -406,25 +430,16 @@ def flush_simulate_design(project_path):
     if os.path.isdir(project_path+"/PolyMemStream_out_no_synth_verify_sim"):
        rmtree(project_path+"/PolyMemStream_out_no_synth_verify_sim")
 
+
+
 def simulation_done(socketio_,project_path):
     print "Called simulation done"
     print "Current session project path: "+project_path
-    os.system("cd "+project_path+";mv ./PolyMemStream_out_no_synth_verify_sim/CPUCode/dfe_host_vec.dump .");
-    os.system("cd "+project_path+";diff c_source_vec.dump dfe_host_vec.dump > c_source_vs_dfe_host_dump.diff")
-    num_diff_lines=sum(1 for line in open(project_path+"/c_source_vs_dfe_host_dump.diff"))
-    with app.test_request_context():
-        from flask import url_for
-        c_source_dump_path=project_path+"/c_source_vec.dump"
-        c_source_dump_url=url_for('static',
-                                filename=c_source_dump_path)
-        dfe_host_dump_path=project_path+"/dfe_host_vec.dump"
-        dfe_host_dump_url=url_for('static',
-                                filename=dfe_host_dump_path)
-        diff_dump_path=project_path+"/c_source_vs_dfe_host_dump.diff"
-        diff_dump_url=url_for('static',
-                                filename=diff_dump_path)
-    print "emitting"
-    socketio_.emit('sim_verification',{'verification_result':num_diff_lines,'c_source_dump':c_source_dump_url,'dfe_host_dump':dfe_host_dump_url,'c_source_vs_dfe_host_dump':diff_dump_url},namespace='/test');
+    if not os.path.isfile(project_path+"/dfe_host_vec.dump"):
+        os.system("cd "+project_path+";mv ./PolyMemStream_out_no_synth_verify_sim/CPUCode/dfe_host_vec.dump .");
+    if not os.path.isfile(project_path+"/c_source_vs_dfe_host_dump.diff"):
+        os.system("cd "+project_path+";diff c_source_vec.dump dfe_host_vec.dump > c_source_vs_dfe_host_dump.diff")
+    socketio_.emit('sim_verification_done',namespace='/test');
 
 @socketio.on('simulate_design', namespace='/test')
 def simulate_design():
