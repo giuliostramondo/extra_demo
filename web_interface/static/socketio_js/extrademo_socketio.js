@@ -17,6 +17,7 @@ function create_card( title, content )
                         </div>
                       </div>
                     </div>
+                    <br>
                     `;
              
    return card_html_code;
