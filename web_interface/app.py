@@ -15,26 +15,26 @@ import csv
 #useful for speeding up test, set to false in production
 debug_perf_prediction=False
 
-def popenAndCall(socketio_,onExit,stdout_file, popenArgs):
+def popenAndCall(socketio_,onExit,stdout_file, popenArgs, session_=[]):
     """
     Runs the given args in a subprocess.Popen, and then calls the function
     onExit when the subprocess completes.
     onExit is a callable object, and popenArgs is a list/tuple of args that 
     would give to subprocess.Popen.
     """
-    def runInThread(socketio_,onExit, stdout_file, popenArgs):
+    def runInThread(socketio_,onExit, stdout_file, popenArgs,session_=[]):
         print " ===== thread args"+str(popenArgs)+"+++++++"
         if not debug_perf_prediction:
             proc = subprocess.Popen(*popenArgs, shell=True, bufsize=0, stdout=stdout_file)
             proc.wait()
         else: 
             socketio_.sleep(3)
-        onExit(socketio_)
+        onExit(socketio_,session_)
         stdout_file.close()
         return
     #thread = threading.Thread(target=runInThread, args=(onExit,stdout_file , popenArgs))
     #thread.start()
-    socketio.start_background_task(runInThread,*(socketio_,onExit,stdout_file,popenArgs))
+    socketio.start_background_task(runInThread,*(socketio_,onExit,stdout_file,popenArgs,session_))
     # returns immediately after the thread starts
     return thread
 
@@ -283,7 +283,7 @@ def create_project(message):
         emit('created_project',{'error':'A project named '+project_name+' already_exists'});
     
 
-def perf_prediction_done(socketio_):
+def perf_prediction_done(socketio_,session_):
     print "++++++ Performance prediction over ++++++"
 
     socketio_.emit('done_performance_prediction',{'threads': 4},
@@ -406,6 +406,26 @@ def flush_simulate_design(project_path):
     if os.path.isdir(project_path+"/PolyMemStream_out_no_synth_verify_sim"):
        rmtree(project_path+"/PolyMemStream_out_no_synth_verify_sim")
 
+def simulation_done(socketio_,project_path):
+    print "Called simulation done"
+    print "Current session project path: "+project_path
+    os.system("cd "+project_path+";mv ./PolyMemStream_out_no_synth_verify_sim/CPUCode/dfe_host_vec.dump .");
+    os.system("cd "+project_path+";diff c_source_vec.dump dfe_host_vec.dump > c_source_vs_dfe_host_dump.diff")
+    num_diff_lines=sum(1 for line in open(project_path+"/c_source_vs_dfe_host_dump.diff"))
+    with app.test_request_context():
+        from flask import url_for
+        c_source_dump_path=project_path+"/c_source_vec.dump"
+        c_source_dump_url=url_for('static',
+                                filename=c_source_dump_path)
+        dfe_host_dump_path=project_path+"/dfe_host_vec.dump"
+        dfe_host_dump_url=url_for('static',
+                                filename=dfe_host_dump_path)
+        diff_dump_path=project_path+"/c_source_vs_dfe_host_dump.diff"
+        diff_dump_url=url_for('static',
+                                filename=diff_dump_path)
+    print "emitting"
+    socketio_.emit('sim_verification',{'verification_result':num_diff_lines,'c_source_dump':c_source_dump_url,'dfe_host_dump':dfe_host_dump_url,'c_source_vs_dfe_host_dump':diff_dump_url},namespace='/test');
+
 @socketio.on('simulate_design', namespace='/test')
 def simulate_design():
     print "called simulate design"
@@ -430,21 +450,9 @@ def simulate_design():
         print "Original dump successfully generated"
     else:
         print "Problems during the generation of the dump"
-    os.system("cd "+project_path+";mv PRFStreamCpuCode_dump_instr.c ./PolyMemStream_out_no_synth_verify_sim/CPUCode/PRFStreamCpuCode.c; cd ./PolyMemStream_out_no_synth_verify_sim/CPUCode;make RUNRULE=Simulation runsim > out ")
-    os.system("cd "+project_path+";mv ./PolyMemStream_out_no_synth_verify_sim/CPUCode/dfe_host_vec.dump .");
-    os.system("cd "+project_path+";diff c_source_vec.dump dfe_host_vec.dump > c_source_vs_dfe_host_dump.diff")
-    num_diff_lines=sum(1 for line in open(project_path+"/c_source_vs_dfe_host_dump.diff"))
-    c_source_dump_path=project_path+"/c_source_vec.dump"
-    c_source_dump_url=url_for('static',
-                            filename=c_source_dump_path)
-    dfe_host_dump_path=project_path+"/dfe_host_vec.dump"
-    dfe_host_dump_url=url_for('static',
-                            filename=dfe_host_dump_path)
-    diff_dump_path=project_path+"/c_source_vs_dfe_host_dump.diff"
-    diff_dump_url=url_for('static',
-                            filename=diff_dump_path)
-    print "emitting"
-    emit('sim_verification',{'verification_result':num_diff_lines,'c_source_dump':c_source_dump_url,'dfe_host_dump':dfe_host_dump_url,'c_source_vs_dfe_host_dump':diff_dump_url});
+    outfile = open(project_path+'/max_sim_ver.out', 'w');
+    popenAndCall(socketio,simulation_done,outfile, ["cd "+project_path+"; mv PRFStreamCpuCode_dump_instr.c ./PolyMemStream_out_no_synth_verify_sim/CPUCode/PRFStreamCpuCode.c; cd ./PolyMemStream_out_no_synth_verify_sim/CPUCode;make RUNRULE=Simulation runsim "],project_path)
+    emit("starting_simulation")
 
 
 @socketio.on('disconnect', namespace='/test')
