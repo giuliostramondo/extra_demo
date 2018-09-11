@@ -477,6 +477,7 @@ function init_socketio() {
                         "<a href='"+msg.c_source_vs_dfe_host_dump+
                         "' style='color: inherit;text-decoration: inherit;'> Download C vs DFE diff</a>"+
                     "</button>";
+                content+=next_card_trigger;
                 content+=dl_c_dump;
                 if (msg.validation_result!=0){
                     content+=dl_dfe_dump;
