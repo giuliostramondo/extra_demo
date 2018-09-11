@@ -392,8 +392,59 @@ def generate_design():
             ";rm -rf PolyMemStream_ref;rm PolyMemStream_ref.zip")
     send_design_generation_results(project_path)
     
-    
 
+def flush_simulate_design(project_path):
+    print "Flusing old data"
+    if os.path.isfile(project_path+"/current_input_dump_instr.c"):
+        os.remove(project_path+"/current_input_dump_instr.c")
+    if os.path.isfile(project_path+"/current_input_dump_instr"):
+        os.remove(project_path+"/current_input_dump_instr")
+    if os.path.isfile(project_path+"/c_source_vec.dump"):
+        os.remove(project_path+"/c_source_vec.dump")
+    if os.path.isfile(project_path+"/dfe_host_vec.dump"):
+        os.remove(project_path+"/dfe_host_vec.dump")
+    if os.path.isdir(project_path+"/PolyMemStream_out_no_synth_verify_sim"):
+       rmtree(project_path+"/PolyMemStream_out_no_synth_verify_sim")
+
+@socketio.on('simulate_design', namespace='/test')
+def simulate_design():
+    print "called simulate design"
+    project=session.get('selected_project','not set')
+    project_path="projects/"+project 
+    flush_simulate_design(project_path)
+    print "running code instrumenter"
+    os.system("cd "+project_path+
+            ";python ../../../simulate_design/instrument_original_c_source.py current_input.c ./PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c current_input_no_includes.vec_info current_input_no_includes.vec_size_info;")
+    if os.path.isfile(project_path+"/current_input_dump_instr.c") and os.path.isfile(project_path+"/PRFStreamCpuCode_dump_instr.c"):
+        print "code instrumenter generated source correctly"
+    print "cloning maxeler project to _verify_sim"
+    os.system("cd "+project_path+";cp -r  PolyMemStream_out_no_synth PolyMemStream_out_no_synth_verify_sim;")
+
+    print "compiling c source code"
+    os.system("cd "+project_path+";gcc -std=c99 current_input_dump_instr.c -o current_input_dump_instr;./current_input_dump_instr > out;")
+    if os.path.isfile(project_path+"/current_input_dump_instr"):
+        print "Executable successfully generated"
+    else:
+        print "Problems during executable compilation"
+    if os.path.isfile(project_path+"/c_source_vec.dump"):
+        print "Original dump successfully generated"
+    else:
+        print "Problems during the generation of the dump"
+    os.system("cd "+project_path+";mv PRFStreamCpuCode_dump_instr.c ./PolyMemStream_out_no_synth_verify_sim/CPUCode/PRFStreamCpuCode.c; cd ./PolyMemStream_out_no_synth_verify_sim/CPUCode;make RUNRULE=Simulation runsim > out ")
+    os.system("cd "+project_path+";mv ./PolyMemStream_out_no_synth_verify_sim/CPUCode/dfe_host_vec.dump .");
+    os.system("cd "+project_path+";diff c_source_vec.dump dfe_host_vec.dump > c_source_vs_dfe_host_dump.diff")
+    num_diff_lines=sum(1 for line in open(project_path+"/c_source_vs_dfe_host_dump.diff"))
+    c_source_dump_path=project_path+"/c_source_vec.dump"
+    c_source_dump_url=url_for('static',
+                            filename=c_source_dump_path)
+    dfe_host_dump_path=project_path+"/dfe_host_vec.dump"
+    dfe_host_dump_url=url_for('static',
+                            filename=dfe_host_dump_path)
+    diff_dump_path=project_path+"/c_source_vs_dfe_host_dump.diff"
+    diff_dump_url=url_for('static',
+                            filename=diff_dump_path)
+    print "emitting"
+    emit('sim_verification',{'verification_result':num_diff_lines,'c_source_dump':c_source_dump_url,'dfe_host_dump':dfe_host_dump_url,'c_source_vs_dfe_host_dump':diff_dump_url});
 
 
 @socketio.on('disconnect', namespace='/test')

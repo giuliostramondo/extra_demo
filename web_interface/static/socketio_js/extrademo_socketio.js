@@ -366,7 +366,6 @@ function init_socketio() {
                     <br>
                     <form id='simulate_design' method='POST' action='#' style='display:inline;'>
                         <input type="SUBMIT" value="Simulate Design">
-
                     </form>
                     <button class="btn-dl"><i class="fa fa-download"></i>`+ 
                         "<a href='"+msg.project_no_sinth_zip+
@@ -385,8 +384,8 @@ function init_socketio() {
                     editorGenDesign.setTheme("ace/theme/monokai");
                     editorGenDesign.session.setMode("ace/mode/c_cpp");          
                     $('form#simulate_design').submit(function(event){
-                        //socket.emit('analyze_code',{source: editor.getValue()});
-                        console.log(editor.getValue());
+                        console.log(editorGenDesign.getValue());
+                        socket.emit('simulate_design');
                         return false;
                     });
             });
@@ -446,6 +445,10 @@ function init_socketio() {
                     console.log('flushing perf pred');
                     $('#performance_prediction_output').html("");
                 }
+            });
+            socket.on('sim_verification',function(msg){
+                console.log("=== verification compleate");
+                console.log(msg);
             });
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a
