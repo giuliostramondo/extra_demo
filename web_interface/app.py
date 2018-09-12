@@ -216,6 +216,7 @@ def send_sim_data( project_path="" ):
     if project_path=="":
         project=session.get('selected_project','not set')
         project_path="projects/"+project 
+    print project_path
     num_diff_lines=sum(1 for line in open(project_path+"/c_source_vs_dfe_host_dump.diff"))
     c_source_dump_path=project_path+"/c_source_vec.dump"
     c_source_dump_url=url_for('static',

@@ -449,7 +449,7 @@ function init_socketio() {
             });
             socket.on('sim_verification_done',function(){
                 console.log('sim verification done, asking data');
-                socket.emit('send_sim_data',{project: $('#project_list').val()});
+                socket.emit('send_sim_data');
                 return false;
             });
             socket.on('sim_verification',function(msg){

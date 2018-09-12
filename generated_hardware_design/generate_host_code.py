@@ -61,6 +61,11 @@ string= '''
             char *scheduleFile = argv[1];
             schedule_len = getFileLenght(scheduleFile);
             s = parseSchedule(scheduleFile);
+        }else{
+         '''+'char *scheduleFile = "../../'+configuration["SCHEDULE"]+'";'
+string+='''
+            schedule_len = getFileLenght(scheduleFile);
+            s = parseSchedule(scheduleFile);
         }
 
         int size = 87040;
@@ -122,6 +127,7 @@ instrumenter.insert_after_polymem_loop(offload,typedefs)
 print instrumenter.generate_code()
 compute = '''
             prfStreamInput.param_prfMode=COMPUTE;
+            prfStreamInput.param_scheduleROMsize=schedule_len;
             #pragma polymem compute
             PRFStream_run(StreamDFE,&prfStreamInput);
         '''

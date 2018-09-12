@@ -10,4 +10,4 @@ SCHEDULE=`echo $best_cfg | awk '{print $11}'`
 echo "P=\"$P\""> ./${INPUT_FILE_STEM}.cfg
 echo "Q=\"$Q\"">> ./${INPUT_FILE_STEM}.cfg
 echo "SCHEME=\"$SCHEME\"">> ./${INPUT_FILE_STEM}.cfg
-echo "SCHEDULE=\"$SCHEDULE\"">> ./${INPUT_FILE_STEM}.cfg
+echo "SCHEDULE=\"$(basename $SCHEDULE)\"">> ./${INPUT_FILE_STEM}.cfg
