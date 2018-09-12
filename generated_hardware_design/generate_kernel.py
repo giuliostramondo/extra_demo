@@ -304,7 +304,7 @@ kernel_maxj_code+="""//Prepare prf inputs for Computation
             DFEStruct PRFInputs_compute = prf_inputs.newInstance(kernel);
             PRFInputs_compute["RowIndex"]<==stream.offset(rowIndex_copy_read,-loop_delay);//write in A
             PRFInputs_compute["ColumnIndex"]<==columnIndex_copy_write;
-            PRFInputs_compute["WriteEnable"]<==(copy_elementCounter>=loop_delay)?mask:writeDisable;
+            PRFInputs_compute["WriteEnable"]<==(copy_elementCounter>=loop_delay)?writeEnable_copy:writeDisable;
             PRFInputs_compute["AccType"]<==accType_copy;
             PRFInputs_compute["Mask"]<==mask;
 
