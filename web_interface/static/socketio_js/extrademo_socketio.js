@@ -383,6 +383,7 @@ function init_socketio() {
                             $("body").removeClass("editor-active");});
                     var editorGenDesign = ace.edit("editorGenDesign");
                     editorGenDesign.setTheme("ace/theme/monokai");
+                    editorGenDesign.setShowPrintMargin(false);
                     editorGenDesign.session.setMode("ace/mode/c_cpp");          
                     $('form#simulate_design').submit(function(event){
                         console.log(editorGenDesign.getValue());
@@ -420,6 +421,7 @@ function init_socketio() {
 
                     var editor = ace.edit("editor");
                     editor.setTheme("ace/theme/monokai");
+                    editor.setShowPrintMargin(false);
                     editor.session.setMode("ace/mode/c_cpp");
                     $('form#analyze').submit(function(event){
                         socket.emit('analyze_code',{source: editor.getValue()});
