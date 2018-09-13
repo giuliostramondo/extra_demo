@@ -14,4 +14,4 @@ do
     fi  
 done <${INPUT_FILE_STEM}.cfg 
 
-cat ${path_to_engine_src}/PRFConstants.maxj_template | sed "s/%SCHEME%/${CFG_PARAM["SCHEME"]}/" | sed "s/%Q%/${CFG_PARAM["Q"]}/" | sed "s/%P%/${CFG_PARAM["P"]}/" > ${path_to_engine_src}/PRFConstants.maxj
+cat ${path_to_engine_src}/PRFConstants.maxj_template | sed "s/%SCHEME%/${CFG_PARAM["SCHEME"]}/" | sed "s/%Q%/${CFG_PARAM["Q"]}/" | sed "s/%P%/${CFG_PARAM["P"]}/" | sed "s/%F%/${CFG_PARAM["FREQUENCY"]}/"> ${path_to_engine_src}/PRFConstants.maxj
