@@ -374,8 +374,8 @@ function init_socketio() {
                     "</button>";
                     var card = create_card(title,content); 
                     // Remove old content
-                    $('#generated_design').html("");
-                    $('#generated_design').prepend(card);
+                    $('#design_generation_output').html("");
+                    $('#design_generation_output').prepend(card);
                      //Disable page scroll when on editor
                     $('#editorGenDesign').mouseenter(function() {
                             $("body").addClass("editor-active");}
@@ -440,20 +440,22 @@ function init_socketio() {
                 }
             });
             socket.on('flush_card',function(msg){
-                if(msg.card == 'analysis'){
-                    console.log('flushing analysis');
-                    $('#analysis_output').html("");
-                }
-                if(msg.card == 'performance_pred'){
-                    console.log('flushing perf pred');
-                    $('#performance_prediction_output').html("");
-                }
+                //Convention: name of a card is name of a 
+                //backend phase  name + '_output' 
+                console.log('flushing '+msg.card);
+                $('#'+msg.card+'_output').html("");
             });
+
             socket.on('sim_verification_done',function(){
                 console.log('sim verification done, asking data');
                 socket.emit('send_sim_data');
                 return false;
             });
+            socket.on('done_synthesis',function(){
+                console.log('synthesis complete');
+                socket.emit('send_synthesis_results');
+            });
+
             socket.on('sim_verification',function(msg){
                 console.log("data revceived");
                 console.log(msg);
@@ -487,14 +489,60 @@ function init_socketio() {
                     content+=dl_diff;
                 }
                 var card=create_card(title,content);
-                $('#simulation').html("");
-                $('#simulation').prepend(card);
+                $('#simulation_output').html("");
+                $('#simulation_output').prepend(card);
 
                 $('form#synthesize_design').submit(function(event){
                         socket.emit('synthesize_design');
                         return false;
                     });
                 return false; 
+            });
+
+            socket.on('synthesis_results',function(msg){
+                console.log("Received synthesis results");
+                console.log(msg);
+                var title="Synthesis Results";
+                var validation_outcome="<font color='green'>Succeded</font>";
+                if (! msg.result == "Success" ){
+                
+                    validation_outcome="<font color='red'>Failed</font>";
+                }
+                var content = "<b>Synthesis "+validation_outcome+" </b><br>";
+                content += "<b>Synthesized at </b>"+msg.frequency+" MHz<br>";
+                content += "<b>Time Taken</b> "+msg.time_taken+"<br><br>";
+                data=msg.resource_usage;
+                output = csv_to_html_table(data);
+                perf_table_card= 
+                    create_inner_card(
+                            "Resource usage",
+                            output);
+                content += perf_table_card;
+                var build_log='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
+                        "<a href='"+msg.build_log+
+                        "' style='color: inherit;text-decoration: inherit;'> Download Build Log</a>"+
+                    "</button> ";
+                var project_zip='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
+                        "<a href='"+msg.project_zip+
+                        "' style='color: inherit;text-decoration: inherit;'> Download Maxeler Project (with synthesis)</a>"+
+                    "</button> ";
+                var next_card_trigger=`
+                    <br>
+                    <form id='benchmark_design' method='POST' action='#' style='display:inline;'>
+                        <input type="SUBMIT" value="Benchmark Design">
+                    </form>`;
+                content += next_card_trigger;
+                content += build_log;
+                content += project_zip;
+                var card=create_card(title,content);
+                $('#synthesis_output').html("");
+                $('#synthesis_output').prepend(card);
+                
+                $('form#benchmark_design').submit(function(event){
+                        socket.emit('benchmark_design');
+                        return false;
+                    })
+                return false;
             });
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a

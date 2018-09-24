@@ -131,10 +131,10 @@ def ping_pong():
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(target=background_thread)
+    #global thread
+    #with thread_lock:
+    #    if thread is None:
+    #        thread = socketio.start_background_task(target=background_thread)
     emit('my_response', {'data': 'Connected', 'count': 0})
 
 @socketio.on('load_projects', namespace='/test')
@@ -230,9 +230,74 @@ def send_sim_data( project_path="" ):
     print "emitting"
     emit('sim_verification',{'validation_result':num_diff_lines,'c_source_dump':c_source_dump_url,'dfe_host_dump':dfe_host_dump_url,'c_source_vs_dfe_host_dump':diff_dump_url});
 
+@socketio.on('send_synthesis_results', namespace='/test')
+def send_synthesis_results(project_path=""):
+    print "Called send_synthesis_results"
+    if project_path=="":
+        project=session.get('selected_project','not set')
+        project_path="projects/"+project 
+    build_log=project_path+"/PolyMemStream_out_synth/RunRules/DFE/maxfiles/PRFStream_VECTIS_DFE/_build.log"
+    if not os.path.isfile(project_path+"/PolyMemStream_out_synth.zip"):
+        os.system("cd "+project_path+";zip -r PolyMemStream_out_synth.zip PolyMemStream_out_synth")
+    project_zip=project_path+"/PolyMemStream_out_synth.zip"
+    build_log_url=url_for('static',
+                            filename=build_log)
+    project_zip_url=url_for('static',
+                            filename=project_zip)
+    #TODO send resource usage in csv format.
+    # Extract the time taken for the synthesis and send to client 
+
+    synthesis_outcome='Fail'
+    final_resource_usage=False
+    time=""
+    resources=[]
+    frequency=""
+    with open(project_path+"/current_input_no_includes.cfg") as f:
+        for line in f:
+            if line.find("FREQUENCY")!=-1:
+                frequency=line.split('"')[1]
+    with open(build_log) as f:
+        for line in f:
+            if line.find("met timing with score 0 (best score 0)") != -1:
+                synthesis_outcome='Success'
+            if line.find("FINAL RESOURCE USAGE") != -1:
+                final_resource_usage=True 
+            if final_resource_usage and line.find("FINAL RESOURCE USAGE") == -1:
+                logic_utilization=line
+                print line
+                resource={}
+                resource_type = line.split(':')[3].strip()
+                resource["type"]=resource_type
+                usage_general=line.split(':')[4].strip()
+                used_items=usage_general.split('/')[0].strip()
+                resource["used"]=used_items
+                rest=usage_general.split('/')[1].strip()
+                total_items=rest.split('(')[0].strip()
+                resource["total"]=total_items
+                rest_1=rest.split('(')[1].strip()
+                percentage=rest_1.split('%')[0].strip()
+                resource["percentage"]=percentage
+                print resource 
+                resources.append(resource)
+
+            if final_resource_usage and line.find("Block memory") != -1:
+                final_resource_usage=False
+            if line.find("PROGRESS: Build completed") != -1:
+                time=line
+                time=time.split('(')[1].split(')')[0]
+                time=time.replace('took ','')
     
+    resources_csv="Resource,Used,Total,Use Percentage (%) \n"
+    for res in resources:
+        resources_csv+=res["type"]+","+res["used"]+","+res["total"]+","+res["percentage"]+"\n"
+    print resources_csv
+
+    print time
+
+    print "emitting results"
+    emit('synthesis_results',{'result': 'Success','resource_usage':resources_csv,'build_log':build_log_url,'project_zip':project_zip_url,'time_taken':time,'frequency':frequency})   
 #ordered list of phases
-phase_list = ['analysis','performance_pred','design_generation',"simulation"]
+phase_list = ['analysis','performance_prediction','design_generation',"simulation","synthesis"]
 #for each phase a tuple containing the list of required files and function to call to update
 #the respective client "card"
 phases_data={'analysis':(['/current_input_no_includes.atrace',
@@ -240,16 +305,24 @@ phases_data={'analysis':(['/current_input_no_includes.atrace',
                    '/current_input_no_includes.vec_info',
                    '/current_input_no_includes.vec_size_info'
                     ],send_analysis_results),
-             'performance_pred':(["/current_input_no_includes_noschedule_col.analysis",
+             'performance_prediction':(["/current_input_no_includes_noschedule_col.analysis",
                     "/schedule_analysis_out"],
                       send_performance_results),
              'design_generation':(["/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",
+                "/PolyMemStream_out_no_synth",
                 "/PolyMemStream_out_no_synth.zip"],
                 send_design_generation_results),
              'simulation':(["/c_source_vs_dfe_host_dump.diff",
                  "/c_source_vec.dump",
-                 "/dfe_host_vec.dump"],
-                send_sim_data)
+                 "/dfe_host_vec.dump",
+                 "/current_input_dump_instr.c",
+                 "/current_input_dump_instr",
+                 "/PolyMemStream_out_no_synth_verify_sim"],
+                send_sim_data),
+             'synthesis':(["/PolyMemStream_out_synth/RunRules/DFE/maxfiles/PRFStream_VECTIS_DFE/_build.log",
+                 "/PolyMemStream_out_synth/RunRules/DFE/binaries/PRFStream",
+                 "/PolyMemStream_out_synth"],send_synthesis_results),
+             'benchmark':(None)
             }
 
 def remove_stale_data( project_path, upgraded_card ):
@@ -258,9 +331,12 @@ def remove_stale_data( project_path, upgraded_card ):
         if phase == upgraded_card:
             remove_current=True  
         if remove_current:
-            for file_to_remove in phases_data[phase][0]:
-                if os.path.exists(project_path+file_to_remove):
-                    os.remove(project_path+file_to_remove) 
+            print "flushing "+phase
+            for to_remove in phases_data[phase][0]:
+                if os.path.isfile(project_path+to_remove):
+                    os.remove(project_path+to_remove) 
+                if os.path.isdir(project_path+to_remove):
+                    rmtree(project_path+to_remove)
             emit('flush_card',{'card':phase})
    
 
@@ -276,7 +352,7 @@ def select_project(message):
     for phase in phase_list:
         print "Checking if data for "+phase+" are available"
         for required_file in phases_data[phase][0]:
-            if not os.path.isfile(project_path+required_file):
+            if not os.path.exists(project_path+required_file):
                 print required_file+" is NOT available, not loading "+phase
                 return
             print required_file+" is available"
@@ -349,7 +425,7 @@ def performance_prediction(message):
     print "called performance_prediction"
     project=session.get('selected_project','not set')
     project_path="projects/"+project
-    remove_stale_data( project_path, 'performance_pred')
+    remove_stale_data( project_path, 'performance_prediction')
     outfile = open(project_path+'/scheduler_out', 'w');
 
     popenAndCall(socketio,perf_prediction_done,outfile, ["cd "+project_path+"; python ../../../performance_prediction/schedule_atrace.py current_input_no_includes.atrace ReRo 2 4"])
@@ -398,6 +474,7 @@ def analyze_code(message):
 def generate_design():
     project=session.get('selected_project','not set')
     project_path="projects/"+project
+    remove_stale_data( project_path, 'design_generation')
     #generate current_input_no_includes.cfg
     os.system("cd "+project_path+
             ";../../../generated_hardware_design/generate_cfg_webapp.sh current_input_no_includes.analysis")
@@ -418,19 +495,6 @@ def generate_design():
     send_design_generation_results(project_path)
     
 
-def flush_simulate_design(project_path):
-    print "Flusing old data"
-    if os.path.isfile(project_path+"/current_input_dump_instr.c"):
-        os.remove(project_path+"/current_input_dump_instr.c")
-    if os.path.isfile(project_path+"/current_input_dump_instr"):
-        os.remove(project_path+"/current_input_dump_instr")
-    if os.path.isfile(project_path+"/c_source_vec.dump"):
-        os.remove(project_path+"/c_source_vec.dump")
-    if os.path.isfile(project_path+"/dfe_host_vec.dump"):
-        os.remove(project_path+"/dfe_host_vec.dump")
-    if os.path.isdir(project_path+"/PolyMemStream_out_no_synth_verify_sim"):
-       rmtree(project_path+"/PolyMemStream_out_no_synth_verify_sim")
-
 
 
 def simulation_done(socketio_,project_path):
@@ -447,7 +511,7 @@ def simulate_design():
     print "called simulate design"
     project=session.get('selected_project','not set')
     project_path="projects/"+project 
-    flush_simulate_design(project_path)
+    remove_stale_data( project_path, 'simulation')
     print "running code instrumenter"
     os.system("cd "+project_path+
             ";python ../../../simulate_design/instrument_original_c_source.py current_input.c ./PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c current_input_no_includes.vec_info current_input_no_includes.vec_size_info;")
@@ -470,6 +534,26 @@ def simulate_design():
     popenAndCall(socketio,simulation_done,outfile, ["cd "+project_path+"; mv PRFStreamCpuCode_dump_instr.c ./PolyMemStream_out_no_synth_verify_sim/CPUCode/PRFStreamCpuCode.c; cd ./PolyMemStream_out_no_synth_verify_sim/CPUCode;make RUNRULE=Simulation runsim "],project_path)
     emit("starting_simulation")
 
+    
+
+
+
+def synthesis_done(socketio_,project_path):
+    print "+++++ Synthesis DONE"
+    socketio_.emit('done_synthesis',namespace='/test')
+    
+@socketio.on('synthesize_design',namespace='/test')
+def synthesize_design():
+    print "Called synthesize design"
+    project=session.get('selected_project','not set')
+    project_path="projects/"+project 
+    remove_stale_data( project_path, 'synthesis')
+    print "Generating compilation folder"
+    outfile = open(project_path+'/max_synth.out', 'w');
+    os.system("cd "+project_path+
+            ";cp -r PolyMemStream_out_no_synth PolyMemStream_out_synth;");
+    popenAndCall(socketio,synthesis_done,outfile, ["cd "+project_path+"; cd ./PolyMemStream_out_synth/CPUCode;make RUNRULE=DFE build"],project_path)
+    print "Started to build"
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
