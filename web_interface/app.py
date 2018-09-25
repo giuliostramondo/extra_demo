@@ -555,6 +555,27 @@ def synthesize_design():
     popenAndCall(socketio,synthesis_done,outfile, ["cd "+project_path+"; cd ./PolyMemStream_out_synth/CPUCode;make RUNRULE=DFE build"],project_path)
     print "Started to build"
 
+@socketio.on('benchmark_design',namespace='/test')
+def benckmark_design():
+    print "Called benkmark design"
+    project=session.get('selected_project','not set')
+    project_path="projects/"+project 
+    remove_stale_data( project_path, 'benchmark')
+    print "Generating benckmark folder"
+    os.system("cd "+project_path+
+            ";cp -r PolyMemStream_out_synth PolyMemStream_out_synth_benchmark;");
+    print "Generating benckmark DFE host source"
+    os.system("cd "+project_path+
+            ";python ../../../benchmark_hardware_design/generate_host_code.py PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c;mv PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode; mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_orig.c;mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c")
+    print "Compiling benchmark"
+    os.system("cd "+project_path+"/PolyMemStream_out_synth_benchmark/CPUCode;"+
+            "make RUNRULE=DFE build")
+    print "Running benchmark"
+    os.system("cd "+project_path+"/PolyMemStream_out_synth_benchmark/CPUCode;"+
+            "make RUNRULE=DFE run")
+
+
+
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
     print('Client disconnected', request.sid)

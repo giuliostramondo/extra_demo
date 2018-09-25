@@ -77,6 +77,8 @@ string+='''
             scheduleROM = compress_schedule_toROM(s,schedule_len,p*q,scheduleROMsize);
         else
             scheduleROM = malloc(scheduleROMsize*sizeof(int));
+        
+        #pragma polymem beginning_of_original_main
       '''
 
 
