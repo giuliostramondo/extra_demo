@@ -566,7 +566,7 @@ def benckmark_design():
             ";cp -r PolyMemStream_out_synth PolyMemStream_out_synth_benchmark;");
     print "Generating benckmark DFE host source"
     os.system("cd "+project_path+
-            ";python ../../../benchmark_hardware_design/generate_host_code.py PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c;mv PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode; mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_orig.c;mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c")
+            ";python ../../../benchmark_hardware_design/generate_host_code.py PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c current_input_no_includes.atrace;mv PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode; mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_orig.c;mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c")
     print "Compiling benchmark"
     os.system("cd "+project_path+"/PolyMemStream_out_synth_benchmark/CPUCode;"+
             "make RUNRULE=DFE build")
