@@ -221,11 +221,11 @@ function get_trace_plot_layout(){
 function show_loading_card(card_title){
     $('#loading_card_title').html("");
     $('#loading_card_title').prepend("<h2>"+card_title+"</h2>");
-    $('#loading_card').css("visibility", "visible");
+    $('#loading_card').css("display","block")
 }
 
 function hide_loading_card(){
-    $('#loading_card').css("visibility", "hidden");
+    $('#loading_card').css("display", "none");
 }
 function init_socketio() {
             // Use a "/test" namespace.
@@ -292,11 +292,12 @@ function init_socketio() {
                         console.log('vec_size_info');
                         console.log(msg.vec_size_info);
                         hide_loading_card();
+                        $("#nav-item-analysis_output").css("visibility", "visible");
 
                         
 
                         var layout = get_trace_plot_layout();
-                        var title= 'Analysis Results';
+                        var title= '<a name="analysis" ></a>Analysis Results';
                         var loop_info_string=create_loop_info_string(msg.loop_info);
                         var legend=get_trace_plot_legend();
                         var content="";
@@ -320,6 +321,7 @@ function init_socketio() {
                         $('form#performance').submit(function(event){
                             socket.emit('performance_prediction',{'data':'ciao'});
                             show_loading_card("Performance Prediction");
+                            $("#nav-item-performance_prediction_output").css("visibility", "visible");
                             return false;
                         });
                     });
@@ -347,7 +349,8 @@ function init_socketio() {
                     console.log('=== received schedule analysis');
                     console.log(msg);
                     hide_loading_card();
-                    title="Performance Prediction";
+                    $("#nav-item-performance_prediction_output").css("visibility", "visible");
+                    title='<a name="performanceprediction" >Performance Prediction';
                     data=msg.analysis;
                     output = csv_to_html_table(data);
                     perf_table_card= 
@@ -366,6 +369,7 @@ function init_socketio() {
                     $('form#generate_design').submit(function(event){
                         socket.emit('generate_design');
                         show_loading_card("Generated Design");
+                        $("#nav-item-design_deneration_output").css("visibility", "visible");
                         return false;
                     });
             });
@@ -374,8 +378,9 @@ function init_socketio() {
                     console.log('=== received project generation');
                     console.log(msg)
                     console.log(msg.generated_host_c);
+                    $("#nav-item-design_generation_output").css("visibility", "visible");
                     hide_loading_card();
-                    var title= "Generated Design";
+                    var title= '<a name="generateddesign" >Generated Design';
                     var content= '<div id="editorGenDesign">'+
                             escapeHTML(msg.generated_host_c)+'</div>'+
                     `
@@ -404,6 +409,7 @@ function init_socketio() {
                         console.log(editorGenDesign.getValue());
                         socket.emit('simulate_design');
                         show_loading_card("Validation Results");
+                        $("#nav-item-simulation_output").css("visibility", "visible");
                         return false;
                     });
             });
@@ -415,9 +421,11 @@ function init_socketio() {
                     console.log(msg.code);
                     //wipe project contents
                     hide_loading_card();
+                    $("#nav-item-source_code").css("visibility", "visible");
                     current_project=msg.selected_project;
                     $(".project_data").html("");
-                    var title = 'View Code';
+                    //$(".nav-item-removable").css("visibility", "hidden");
+                    var title = '<a name="viewcode" >View Code';
                     var content ='<div id="editor">'+escapeHTML(msg.code)+'</div>'+ 
                     `
                     <br>
@@ -444,6 +452,7 @@ function init_socketio() {
                         socket.emit('analyze_code',{source: editor.getValue()});
                         console.log(editor.getValue());
                         show_loading_card("Analysis Results");
+                        $("#nav-item-analysis_output").css("visibility", "visible");
                         return false;
                     });
                     });
@@ -462,6 +471,7 @@ function init_socketio() {
                 //backend phase  name + '_output' 
                 console.log('flushing '+msg.card);
                 $('#'+msg.card+'_output').html("");
+                $('#nav-item-'+msg.card+'_output').css("visibility", "hidden");
             });
 
             socket.on('sim_verification_done',function(){
@@ -481,7 +491,8 @@ function init_socketio() {
                 console.log("data revceived");
                 console.log(msg);
                 hide_loading_card();
-                var title="Validation Results";
+                $("#nav-item-simulation_output").css("visibility", "visible");
+                var title='<a name="validation" >Validation Results';
                 var validation_outcome="<font color='green'>Succeded</font>";
                 if(msg.validation_result != 0){
                     validation_outcome="<font color='red'>Failed</font>";
@@ -517,6 +528,7 @@ function init_socketio() {
                 $('form#synthesize_design').submit(function(event){
                         socket.emit('synthesize_design');
                         show_loading_card("Synthesis Results");
+                        $("#nav-item-synthesis_output").css("visibility", "visible");
                         return false;
                     });
                 return false; 
@@ -526,7 +538,8 @@ function init_socketio() {
                 console.log("Received synthesis results");
                 console.log(msg);
                 hide_loading_card();
-                var title="Synthesis Results";
+                $("#nav-item-synthesis_output").css("visibility", "visible");
+                var title="<a name='synthesis'>Synthesis Results";
                 var validation_outcome="<font color='green'>Succeded</font>";
                 if (! msg.result == "Success" ){
                 
@@ -565,14 +578,17 @@ function init_socketio() {
                 $('form#benchmark_design').submit(function(event){
                         socket.emit('benchmark_design');
                         show_loading_card("Benchmark Results");
+                        $("#nav-item-benchmark_output").css("visibility", "visible");
                         return false;
                     })
                 return false;
             });
             socket.on('benchmark_results',function(msg){
+                hide_loading_card();
+                $("#nav-item-benchmark_output").css("visibility", "visible");
                 console.log("Received benchmark results");
                 console.log(msg);
-                var title="Benchmark Results";
+                var title="<a name='benchmark'>Benchmark Results";
                 var content='<div id="benchmark_plot"></div>';
                 var benchmark_csv='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
                         "<a href='"+msg.benchmark_data+
@@ -607,7 +623,9 @@ function init_socketio() {
 
             $('form#select_project').submit(function(event){
                 socket.emit('select_project', {project: $('#project_list').val()});
+                $(".nav-item-removable").css("visibility", "hidden");
                 show_loading_card("View Code");
+                $("#nav-item-source_code").css("visibility", "visible");
                 return false;
                     });
 
@@ -627,6 +645,7 @@ function init_socketio() {
                 current_project="";
                 
                 $(".project_data").html("");
+                $(".nav-item-removable").css("visibility", "hidden");
                 return false;
                     });
         }
