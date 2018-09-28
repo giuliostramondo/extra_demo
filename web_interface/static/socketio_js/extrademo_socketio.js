@@ -255,7 +255,32 @@ function init_socketio() {
                 $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
             });
 
+            $(document).on('scroll', function(event){
+                console.log('scrolled');
+                cards=$('.project_data');
+                var offset=100;
+                var currPos =$(window).scrollTop();
+                var i;
+                for(i=0;i<cards.length-1;i++){
+                    if (currPos > cards[i].offsetTop - offset && currPos < cards[i+1].offsetTop){
+                        console.log('currPos'+currPos+'card '+cards[i].id);
+                        $('.nav-item').removeClass('active');
+                        $('#nav-item-select_project').removeClass('active');
+                        $('#nav-item-'+cards[i].id).addClass('active');
+                    }
 
+                }
+                    if(currPos + $(window).height() == $(document).height()){
+                       $('.nav-item').removeClass('active');
+                       $('#nav-item-select_project').removeClass('active');
+                       $('#nav-item-'+cards[cards.length-1].id).addClass('active');
+                    }
+                    if(currPos < 180){
+                       $('.nav-item').removeClass('active');
+                       console.log('activating fist card #nav-item-'+cards[cards.length-1].id);
+                       $('#nav-item-select_project').addClass('active');
+                    }
+            });
             $(document).ready(function(){
                     socket.emit('load_projects');
                     });
