@@ -46,11 +46,11 @@ function csv_to_html_table( data ){
                 if (!(lines[i] === "")){
                     if(i==0){
                     output.push("<tr><th>"
-                    + lines[i].slice(0,-1).split(",").join("</th><th>")
+                    + lines[i].trim().split(",").join("</th><th>")
                     + "</th></tr>");
                     }else{
                      output.push("<tr><td>"
-                    + lines[i].slice(0,-1).split(",").join("</td><td>")
+                    + lines[i].trim().split(",").join("</td><td>")
                     + "</td></tr>");                           
                     }
                 }
@@ -455,7 +455,10 @@ function init_socketio() {
                 console.log('synthesis complete');
                 socket.emit('send_synthesis_results');
             });
-
+            socket.on('done_benchmark',function(){
+                console.log('benchmark complete');
+                socket.emit('send_benchmark_results');
+            });
             socket.on('sim_verification',function(msg){
                 console.log("data revceived");
                 console.log(msg);
@@ -543,6 +546,37 @@ function init_socketio() {
                         return false;
                     })
                 return false;
+            });
+            socket.on('benchmark_results',function(msg){
+                console.log("Received benchmark results");
+                console.log(msg);
+                var title="Benchmark Results";
+                var content='<div id="benchmark_plot"></div>';
+                var benchmark_csv='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
+                        "<a href='"+msg.benchmark_data+
+                        "' style='color: inherit;text-decoration: inherit;'> Benchmark Results</a>"+
+                    "</button> ";
+                content+=benchmark_csv; 
+                var card = create_card(title,content);
+                $('#benchmark_output').html("");
+                $('#benchmark_output').prepend(card);
+                var layout={
+                    title:'Throughput (GB/s)',
+                     font: {
+                     family: 'Courier New, monospace',
+                     size: 28,
+                     color: '#7f7f7f'
+                      }, 
+                    xaxis:{
+                        title:'Size of data (MB)'
+                    },
+                    yaxis:{
+                    
+                    }
+                };
+                var data = [ msg.benchmark_plot_data, msg.benchmark_plot_extimation]
+                Plotly.newPlot('benchmark_plot', data,layout);
+                
             });
             // Handlers for the different forms in the page.
             // These accept data from the user and send it to the server in a

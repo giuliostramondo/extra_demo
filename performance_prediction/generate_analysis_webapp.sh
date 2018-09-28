@@ -41,7 +41,8 @@ for schedule in $(ls . | grep schedule$); do
     #This cannot be used in our case because STREAM considers the aggregated bandwidth of READs and WRITE ports ( off by a 3/2 factor w.r.t. the RAW numbers )
     #Theoretical_BW=`read_csv_cell ../../../performance_prediction/polymem_theoretical_bw.csv ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}`
     Extimated_Freq=`read_csv_cell ../../../performance_prediction/polymem_theoretical_freq.csv ${bw_csv_columns_scheme[${scheme}]} ${bw_csv_rows_mem[${mems}]}`
-    Theoretical_BW=`echo "scale=4;${mems}*${Extimated_Freq}*${data_width}*${used_ports_r_w}"|bc -l`
+    #Theoretical_BW is /1000 because MHz -> GB 
+    Theoretical_BW=`echo "scale=4;${mems}*${Extimated_Freq}*${data_width}*${used_ports_r_w}/1000"|bc -l`
     Extimated_BW=`echo "scale=2;${Theoretical_BW}*${Efficiency}"|bc -l`
     echo "${mems},${p},${q},${scheme},${N_sequential_read},${Npar},${Speedup},${Efficiency},${Extimated_BW},${Extimated_Freq},./schedules/${schedule}">>$output_file 
 done

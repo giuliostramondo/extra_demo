@@ -65,14 +65,16 @@ string+='''
         static double	avgtime[3] = {0}, maxtime[3] = {0},
 		mintime[3] = {FLT_MAX,FLT_MAX,FLT_MAX};
         double		t, times[4][NTIMES];
+
+        if(argc>2){
+            num_copy=atoi(argv[2]);
+        }
+
         double	bytes[3] = {
         1 * sizeof(double) * size,
-        3 * sizeof(double) * size_used,
+        3 * sizeof(double) * size_used*num_copy,
         1 * sizeof(double) * size,
         };
-            if(argc>2){
-                num_copy=atoi(argv[2]);
-            }
         FILE *fp;
         if( access( "benchmark_output.csv", F_OK ) != -1 ) {
             fp  =fopen("benchmark_output.csv","a");
@@ -82,7 +84,7 @@ string+='''
             if(fp==NULL){
                 printf("Problems opening the output file benchmark_output.csv\\n");
             }else{
-                fprintf(fp,"Vector size(64bits elements),Load Bytes(B),Load AVG(s),Load Min(s),Load Max(s),Offload Bytes(B),Offload AVG(s),Offload Min(s),Offload Max(s),Copy Bytes(B),Copy AVG(s),Copy Min(s),Copy Max(s)\\n");
+                fprintf(fp,"Vector size(64bits elements),Load Bytes(B),Load AVG(s),Load Min(s),Load Max(s),Offload Bytes(B),Offload AVG(s),Offload Min(s),Offload Max(s),Compute Bytes(B),Compute AVG(s),Compute Min(s),Compute Max(s),Compute MBytes,Compute GB/s\\n");
             }    
         }
        '''
@@ -187,8 +189,8 @@ compute_benchmark_results_and_write='''
         }
         
         if(fp!=NULL){
-            fprintf(fp,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\\n",size,bytes[0],avgtime[0],mintime[0],maxtime[0],bytes[1],avgtime[1],mintime[1],maxtime[1],bytes[2]
-                ,avgtime[2],mintime[2],maxtime[2]);
+            fprintf(fp,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\\n",size,bytes[0],avgtime[0],mintime[0],maxtime[0],bytes[2],avgtime[2],mintime[2],maxtime[2],bytes[1]
+                ,avgtime[1],mintime[1],maxtime[1],bytes[1]/1024/1024,1.0E-09 * bytes[1]/mintime[1]);
             fclose(fp);
         }
 '''

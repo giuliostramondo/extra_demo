@@ -5,6 +5,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
 from shutil import copyfile, rmtree
 import os
+import io
 from prf_utils import parseATrace, find_plot_dimension 
 import json
 import subprocess
@@ -197,9 +198,26 @@ def send_performance_results( project_path ):
     with open(project_path+"/schedule_analysis_out") as f:
         schedule_analysis_out = f.read()
     with open(project_path+"/current_input_no_includes_noschedule_col.analysis") as f:
-    #with open(project_path+"/current_input_no_includes.analysis") as f:
         schedule_analysis = f.read()
-    emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':schedule_analysis})
+        schedule_analysis_row = schedule_analysis.splitlines()
+        schedule_analysis_row_cols = []
+        for row in schedule_analysis_row:
+            schedule_analysis_row_cols.append(row.split(','))
+        i=0
+        print schedule_analysis_row_cols
+        reader = csv.reader(f,delimiter=',')
+        print " printing reader"
+        for row in reader:
+            print row[0]
+        sortedlist =[schedule_analysis_row_cols[0]] + sorted(schedule_analysis_row_cols[1:], key=lambda row: float(row[8]), reverse=True)
+        print "sorted_list"
+        print sortedlist
+        sorted_list_rows=[]
+        for row in sortedlist:
+            sorted_list_rows.append(','.join(row))
+        csv_sorted_list='\n'.join(sorted_list_rows)
+        print csv_sorted_list
+        emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':csv_sorted_list})
 
 def send_design_generation_results(project_path):
     with open(project_path+"/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",'r') as f:
@@ -237,8 +255,6 @@ def send_synthesis_results(project_path=""):
         project=session.get('selected_project','not set')
         project_path="projects/"+project 
     build_log=project_path+"/PolyMemStream_out_synth/RunRules/DFE/maxfiles/PRFStream_VECTIS_DFE/_build.log"
-    if not os.path.isfile(project_path+"/PolyMemStream_out_synth.zip"):
-        os.system("cd "+project_path+";zip -r PolyMemStream_out_synth.zip PolyMemStream_out_synth")
     project_zip=project_path+"/PolyMemStream_out_synth.zip"
     build_log_url=url_for('static',
                             filename=build_log)
@@ -296,8 +312,51 @@ def send_synthesis_results(project_path=""):
 
     print "emitting results"
     emit('synthesis_results',{'result': 'Success','resource_usage':resources_csv,'build_log':build_log_url,'project_zip':project_zip_url,'time_taken':time,'frequency':frequency})   
+
+@socketio.on('send_benchmark_results', namespace='/test')
+def send_benchmark_results(project_path=""):
+    print "Called send_benchmark_results"
+    if project_path=="":
+        project=session.get('selected_project','not set')
+        project_path="projects/"+project 
+    benchmark_csv=project_path+"/benchmark_output.csv"
+    benchmark_csv_url=url_for('static',
+                            filename=benchmark_csv)
+    benchmark_stdout=project_path+"/benchmark.out"
+    benchmark_stdout_url=url_for('static',
+                            filename=benchmark_stdout)
+    #Extract throughput extimation
+    throughputs=[]
+    first_row=True
+    with open(project_path+"/current_input_no_includes.analysis") as f:
+        reader = csv.reader(f)
+        for r in reader:
+            if first_row:
+                first_row=False
+            else:
+                throughputs.append(float(r[8]))
+    extimation=max(throughputs[1:])
+    first_row=True
+    with open(benchmark_csv) as f:
+        reader = csv.reader(f)
+        x=[]
+        y=[]
+        y_ref=[]
+        for r in reader:
+            if first_row:
+                #x.append(r[13])
+                #y.append(r[14])
+                #y_ref.append('Extimated GB/s')
+                first_row=False
+            else:
+                x.append(float(r[13]))
+                y.append(float(r[14]))
+                y_ref.append(extimation)
+
+    emit('benchmark_results',{'benchmark_data': benchmark_csv_url,'benchmark_plot_data':{'x':x,'y':y,'mode':'markers','type':'skatter','name':'Measured','marker': { 'size': 10 }},'benchmark_plot_extimation':{'x':x,'y':y_ref,'mode':'lines','type':'skatter','name':'Extimated'},'benchmark_stdout':benchmark_stdout_url})   
+
 #ordered list of phases
-phase_list = ['analysis','performance_prediction','design_generation',"simulation","synthesis"]
+phase_list = ['analysis','performance_prediction','design_generation',"simulation","synthesis","benchmark"]
 #for each phase a tuple containing the list of required files and function to call to update
 #the respective client "card"
 phases_data={'analysis':(['/current_input_no_includes.atrace',
@@ -322,7 +381,7 @@ phases_data={'analysis':(['/current_input_no_includes.atrace',
              'synthesis':(["/PolyMemStream_out_synth/RunRules/DFE/maxfiles/PRFStream_VECTIS_DFE/_build.log",
                  "/PolyMemStream_out_synth/RunRules/DFE/binaries/PRFStream",
                  "/PolyMemStream_out_synth"],send_synthesis_results),
-             'benchmark':(None)
+             'benchmark':(["/benchmark_output.csv","/benchmark.out","/PolyMemStream_out_synth_benchmark"],send_benchmark_results)
             }
 
 def remove_stale_data( project_path, upgraded_card ):
@@ -552,8 +611,12 @@ def synthesize_design():
     outfile = open(project_path+'/max_synth.out', 'w');
     os.system("cd "+project_path+
             ";cp -r PolyMemStream_out_no_synth PolyMemStream_out_synth;");
-    popenAndCall(socketio,synthesis_done,outfile, ["cd "+project_path+"; cd ./PolyMemStream_out_synth/CPUCode;make RUNRULE=DFE build"],project_path)
+    popenAndCall(socketio,synthesis_done,outfile, ["cd "+project_path+"; cd ./PolyMemStream_out_synth/CPUCode;make RUNRULE=DFE build;cd "+project_path+";zip -r PolyMemStream_out_synth.zip PolyMemStream_out_synth"],project_path)
     print "Started to build"
+
+def benchmark_done(socketio_,project_path):
+    print "+++++ Benchmark DONE"
+    socketio_.emit('done_benchmark',namespace='/test')
 
 @socketio.on('benchmark_design',namespace='/test')
 def benckmark_design():
@@ -562,8 +625,11 @@ def benckmark_design():
     project_path="projects/"+project 
     remove_stale_data( project_path, 'benchmark')
     print "Generating benckmark folder"
+    if os.path.isdir(project_path+"/PolyMemStream_out_synth_benchmark"):
+        print "Removing old benchmark directory"
+        os.system("cd "+project_path+";rm -rf PolyMemStream_out_synth_benchmark")
     os.system("cd "+project_path+
-            ";cp -r PolyMemStream_out_synth PolyMemStream_out_synth_benchmark;");
+            ";cp -r PolyMemStream_out_synth PolyMemStream_out_synth_benchmark;")
     print "Generating benckmark DFE host source"
     os.system("cd "+project_path+
             ";python ../../../benchmark_hardware_design/generate_host_code.py PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c current_input_no_includes.atrace;mv PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode; mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_orig.c;mv PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode_benchmark.c PolyMemStream_out_synth_benchmark/CPUCode/PRFStreamCpuCode.c")
@@ -571,8 +637,9 @@ def benckmark_design():
     os.system("cd "+project_path+"/PolyMemStream_out_synth_benchmark/CPUCode;"+
             "make RUNRULE=DFE build")
     print "Running benchmark"
-    os.system("cd "+project_path+"/PolyMemStream_out_synth_benchmark/CPUCode;"+
-            "make RUNRULE=DFE run")
+    outfile = open(project_path+'/benchmark_script.out', 'w');
+    popenAndCall(socketio,benchmark_done,outfile, ["cd "+project_path+";../../../benchmark_hardware_design/run_benchmark.sh" ],project_path)
+
 
 
 
