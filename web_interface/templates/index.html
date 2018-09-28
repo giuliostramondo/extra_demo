@@ -75,9 +75,21 @@
     <div id="simulation_output" class="project_data"></div>
     <div id="synthesis_output" class="project_data"></div>
     <div id="benchmark_output" class="project_data"></div>
+    <div id="loading_card" style="visibility:hidden">
+        <br><br>
+        <div class="container">
+            <div id="loading_card_title"></div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="lds-css ng-scope"><div style="width:100%;height:100%;margin: 0 auto" class="lds-eclipse"><div></div></div></div>
+                    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='./css/loading_wheel.css') }}">
+                </div>
+            </div>
+        </div>
+    </div>
     <br>
     <br>
-    <h2 class='container'>Debug:</h2>
-    <div class='container' id="log"></div>
+    <h2 class='container' style="visibility:hidden">Debug:</h2>
+    <div class='container' id="log" style="visibility:hidden"></div>
 </body>
 </html>

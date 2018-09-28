@@ -217,6 +217,16 @@ function get_trace_plot_layout(){
                         };
     return layout;
 }
+
+function show_loading_card(card_title){
+    $('#loading_card_title').html("");
+    $('#loading_card_title').prepend("<h2>"+card_title+"</h2>");
+    $('#loading_card').css("visibility", "visible");
+}
+
+function hide_loading_card(){
+    $('#loading_card').css("visibility", "hidden");
+}
 function init_socketio() {
             // Use a "/test" namespace.
             // An application can open a connection on multiple namespaces, and
@@ -281,6 +291,7 @@ function init_socketio() {
                         console.log(msg.vec_access_info);
                         console.log('vec_size_info');
                         console.log(msg.vec_size_info);
+                        hide_loading_card();
 
                         
 
@@ -308,6 +319,7 @@ function init_socketio() {
 
                         $('form#performance').submit(function(event){
                             socket.emit('performance_prediction',{'data':'ciao'});
+                            show_loading_card("Performance Prediction");
                             return false;
                         });
                     });
@@ -334,6 +346,7 @@ function init_socketio() {
             socket.on('gen_schedule_analysis_done',function(msg){
                     console.log('=== received schedule analysis');
                     console.log(msg);
+                    hide_loading_card();
                     title="Performance Prediction";
                     data=msg.analysis;
                     output = csv_to_html_table(data);
@@ -352,6 +365,7 @@ function init_socketio() {
                     $('#performance_prediction_output').prepend(card);
                     $('form#generate_design').submit(function(event){
                         socket.emit('generate_design');
+                        show_loading_card("Generated Design");
                         return false;
                     });
             });
@@ -360,6 +374,7 @@ function init_socketio() {
                     console.log('=== received project generation');
                     console.log(msg)
                     console.log(msg.generated_host_c);
+                    hide_loading_card();
                     var title= "Generated Design";
                     var content= '<div id="editorGenDesign">'+
                             escapeHTML(msg.generated_host_c)+'</div>'+
@@ -388,6 +403,7 @@ function init_socketio() {
                     $('form#simulate_design').submit(function(event){
                         console.log(editorGenDesign.getValue());
                         socket.emit('simulate_design');
+                        show_loading_card("Validation Results");
                         return false;
                     });
             });
@@ -398,6 +414,7 @@ function init_socketio() {
                     socket.emit('load_projects');
                     console.log(msg.code);
                     //wipe project contents
+                    hide_loading_card();
                     current_project=msg.selected_project;
                     $(".project_data").html("");
                     var title = 'View Code';
@@ -426,6 +443,7 @@ function init_socketio() {
                     $('form#analyze').submit(function(event){
                         socket.emit('analyze_code',{source: editor.getValue()});
                         console.log(editor.getValue());
+                        show_loading_card("Analysis Results");
                         return false;
                     });
                     });
@@ -462,6 +480,7 @@ function init_socketio() {
             socket.on('sim_verification',function(msg){
                 console.log("data revceived");
                 console.log(msg);
+                hide_loading_card();
                 var title="Validation Results";
                 var validation_outcome="<font color='green'>Succeded</font>";
                 if(msg.validation_result != 0){
@@ -497,6 +516,7 @@ function init_socketio() {
 
                 $('form#synthesize_design').submit(function(event){
                         socket.emit('synthesize_design');
+                        show_loading_card("Synthesis Results");
                         return false;
                     });
                 return false; 
@@ -505,6 +525,7 @@ function init_socketio() {
             socket.on('synthesis_results',function(msg){
                 console.log("Received synthesis results");
                 console.log(msg);
+                hide_loading_card();
                 var title="Synthesis Results";
                 var validation_outcome="<font color='green'>Succeded</font>";
                 if (! msg.result == "Success" ){
@@ -543,6 +564,7 @@ function init_socketio() {
                 
                 $('form#benchmark_design').submit(function(event){
                         socket.emit('benchmark_design');
+                        show_loading_card("Benchmark Results");
                         return false;
                     })
                 return false;
@@ -585,6 +607,7 @@ function init_socketio() {
 
             $('form#select_project').submit(function(event){
                 socket.emit('select_project', {project: $('#project_list').val()});
+                show_loading_card("View Code");
                 return false;
                     });
 
