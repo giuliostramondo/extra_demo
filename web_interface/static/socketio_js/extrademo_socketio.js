@@ -258,7 +258,7 @@ function init_socketio() {
             $(document).on('scroll', function(event){
                 console.log('scrolled');
                 cards=$('.project_data');
-                var offset=100;
+                var offset=200;
                 var currPos =$(window).scrollTop();
                 var i;
                 for(i=0;i<cards.length-1;i++){
