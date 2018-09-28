@@ -297,7 +297,7 @@ function init_socketio() {
                         
 
                         var layout = get_trace_plot_layout();
-                        var title= '<a name="analysis" ></a>Analysis Results';
+                        var title= '<a name="analysis" class="anchor"></a>Analysis Results';
                         var loop_info_string=create_loop_info_string(msg.loop_info);
                         var legend=get_trace_plot_legend();
                         var content="";
@@ -350,7 +350,7 @@ function init_socketio() {
                     console.log(msg);
                     hide_loading_card();
                     $("#nav-item-performance_prediction_output").css("visibility", "visible");
-                    title='<a name="performanceprediction" >Performance Prediction';
+                    title='<a name="performanceprediction" class="anchor" ></a>Performance Prediction';
                     data=msg.analysis;
                     output = csv_to_html_table(data);
                     perf_table_card= 
@@ -380,7 +380,7 @@ function init_socketio() {
                     console.log(msg.generated_host_c);
                     $("#nav-item-design_generation_output").css("visibility", "visible");
                     hide_loading_card();
-                    var title= '<a name="generateddesign" >Generated Design';
+                    var title= '<a name="generateddesign" class="anchor" ></a>Generated Design';
                     var content= '<div id="editorGenDesign">'+
                             escapeHTML(msg.generated_host_c)+'</div>'+
                     `
@@ -425,7 +425,7 @@ function init_socketio() {
                     current_project=msg.selected_project;
                     $(".project_data").html("");
                     //$(".nav-item-removable").css("visibility", "hidden");
-                    var title = '<a name="viewcode" >View Code';
+                    var title = '<a name="viewcode" class="anchor" ></a>View Code';
                     var content ='<div id="editor">'+escapeHTML(msg.code)+'</div>'+ 
                     `
                     <br>
@@ -492,7 +492,7 @@ function init_socketio() {
                 console.log(msg);
                 hide_loading_card();
                 $("#nav-item-simulation_output").css("visibility", "visible");
-                var title='<a name="validation" >Validation Results';
+                var title='<a name="validation" class="anchor" ></a>Validation Results';
                 var validation_outcome="<font color='green'>Succeded</font>";
                 if(msg.validation_result != 0){
                     validation_outcome="<font color='red'>Failed</font>";
@@ -539,7 +539,7 @@ function init_socketio() {
                 console.log(msg);
                 hide_loading_card();
                 $("#nav-item-synthesis_output").css("visibility", "visible");
-                var title="<a name='synthesis'>Synthesis Results";
+                var title="<a name='synthesis' class='anchor'></a>Synthesis Results";
                 var validation_outcome="<font color='green'>Succeded</font>";
                 if (! msg.result == "Success" ){
                 
@@ -588,7 +588,7 @@ function init_socketio() {
                 $("#nav-item-benchmark_output").css("visibility", "visible");
                 console.log("Received benchmark results");
                 console.log(msg);
-                var title="<a name='benchmark'>Benchmark Results";
+                var title="<a name='benchmark' class='anchor'></a>Benchmark Results";
                 var content='<div id="benchmark_plot"></div>';
                 var benchmark_csv='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
                         "<a href='"+msg.benchmark_data+
@@ -633,6 +633,9 @@ function init_socketio() {
 
             $('form#create_project').submit(function(event){
                 //TODO check name
+                $(".nav-item-removable").css("visibility", "hidden");
+                show_loading_card("View Code");
+                $("#nav-item-source_code").css("visibility", "visible");
                 socket.emit('create_project',
                     {project_name:$('#create_project_name_input').val()});
                 return false;
