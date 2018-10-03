@@ -217,7 +217,39 @@ def send_performance_results( project_path ):
             sorted_list_rows.append(','.join(row))
         csv_sorted_list='\n'.join(sorted_list_rows)
         print csv_sorted_list
-        emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':csv_sorted_list})
+    with open(project_path+"/c_source_benchmark_output.csv") as f:
+        reader = csv.reader(f)
+        first_row=True
+        for r in reader:
+            if first_row:
+                first_row=False
+                continue
+            else:
+                init_runtime=float(r[3])
+                final_runtime=float(r[7])
+                kernel_runtime=float(r[11])
+                break
+    #Extract throughput extimation
+    throughputs=[]
+    first_row=True
+    elements_accessed=[]
+    with open(project_path+"/current_input_no_includes.analysis") as f:
+        reader = csv.reader(f)
+        for r in reader:
+            if first_row:
+                first_row=False
+            else:
+                throughputs.append(float(r[8]))
+                elements_accessed.append(int(r[4]))
+    extimation=max(throughputs[1:])*10**3
+    elements=elements_accessed[0]
+    # 3 takes into account 2 reads and 1 write
+    # 8 takes into account elements with datatype *double* (64bits)
+    print "elements"+str(elements)
+    processed_Mbytes=3*float(elements)*8/(10**6)
+    time_extimation_microsecond=(processed_Mbytes/extimation)*10**6
+    c_source_benchmark={'init':init_runtime*10**6,'final':final_runtime*10**6,'kernel':kernel_runtime*10**6}
+    emit('gen_schedule_analysis_done',{'data': schedule_analysis_out,'analysis':csv_sorted_list,'c_source_benchmark':c_source_benchmark,'dfe_extimation':{'throughput_extimation':extimation,'processed_Mbytes':processed_Mbytes,'time_extimation_microsecond':time_extimation_microsecond}})
 
 def send_design_generation_results(project_path):
     with open(project_path+"/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",'r') as f:
@@ -320,8 +352,12 @@ def send_benchmark_results(project_path=""):
         project=session.get('selected_project','not set')
         project_path="projects/"+project 
     benchmark_csv=project_path+"/benchmark_output.csv"
+    benchmark_cpu_csv=project_path+"/c_source_benchmark_output.csv"
     benchmark_csv_url=url_for('static',
                             filename=benchmark_csv)
+    benchmark_cpu_csv_url=url_for('static',
+                            filename=benchmark_cpu_csv)
+
     benchmark_stdout=project_path+"/benchmark.out"
     benchmark_stdout_url=url_for('static',
                             filename=benchmark_stdout)
@@ -337,6 +373,7 @@ def send_benchmark_results(project_path=""):
                 throughputs.append(float(r[8]))
     extimation=max(throughputs[1:])
     first_row=True
+    y_cpu=[]
     with open(benchmark_csv) as f:
         reader = csv.reader(f)
         x=[]
@@ -352,8 +389,19 @@ def send_benchmark_results(project_path=""):
                 x.append(float(r[13]))
                 y.append(float(r[14]))
                 y_ref.append(extimation)
+    first_row=True
+    with open(benchmark_cpu_csv) as f:
+        reader = csv.reader(f)
+        for r in reader:
+            if first_row:
+                #x.append(r[13])
+                #y.append(r[14])
+                #y_ref.append('Extimated GB/s')
+                first_row=False
+            else:
+                y_cpu.append(float(r[14]))
 
-    emit('benchmark_results',{'benchmark_data': benchmark_csv_url,'benchmark_plot_data':{'x':x,'y':y,'mode':'markers','type':'skatter','name':'Measured','marker': { 'size': 10 }},'benchmark_plot_extimation':{'x':x,'y':y_ref,'mode':'lines','type':'skatter','name':'Extimated'},'benchmark_stdout':benchmark_stdout_url})   
+    emit('benchmark_results',{'benchmark_data': benchmark_csv_url,'cpu_benchmark_data':benchmark_cpu_csv_url,'benchmark_plot_data':{'x':x,'y':y,'mode':'markers','type':'skatter','name':'Measured','marker': { 'size': 10 }},'benchmark_plot_extimation':{'x':x,'y':y_ref,'mode':'lines','type':'skatter','name':'Extimated'},'benchmark_cpu_plot_data':{'x':x,'y':y_cpu,'mode':'markers','type':'skatter','name':'Measured CPU','marker': { 'size': 10 }},'benchmark_stdout':benchmark_stdout_url})   
 
 #ordered list of phases
 phase_list = ['analysis','performance_prediction','design_generation',"simulation","synthesis","benchmark"]
@@ -365,6 +413,7 @@ phases_data={'analysis':(['/current_input_no_includes.atrace',
                    '/current_input_no_includes.vec_size_info'
                     ],send_analysis_results),
              'performance_prediction':(["/current_input_no_includes_noschedule_col.analysis",
+                    "/c_source_benchmark_output.csv",
                     "/schedule_analysis_out"],
                       send_performance_results),
              'design_generation':(["/PolyMemStream_out_no_synth/CPUCode/PRFStreamCpuCode.c",
@@ -455,6 +504,13 @@ def gen_schedule_analysis():
     project=session.get('selected_project','not set')
     project_path="projects/"+project
     os.system("cd "+project_path+"; ../../../performance_prediction/generate_analysis_webapp.sh  current_input_no_includes > schedule_analysis_out")
+    os.system("cd "+project_path+";python ../../../performance_prediction/generate_benchmark_source.py current_input_no_includes.c current_input_no_includes.atrace > source_benchmark_generation_out")
+    os.system("cd "+project_path+";gcc -o c_source_benchmark -std=c99 c_source_benchmark.c")
+    if os.path.isfile(project_path+"/c_source_benchmark"):
+        os.system("cd "+project_path+";./c_source_benchmark > benchmark_out")
+    else:
+        print "ERROR: problem during generation/compilation of the c source benchmark"
+        
 
     
     with open(project_path+"/current_input_no_includes.analysis","rb") as f:

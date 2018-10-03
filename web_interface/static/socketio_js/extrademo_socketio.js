@@ -256,14 +256,12 @@ function init_socketio() {
             });
 
             $(document).on('scroll', function(event){
-                console.log('scrolled');
                 cards=$('.project_data');
                 var offset=200;
                 var currPos =$(window).scrollTop();
                 var i;
                 for(i=0;i<cards.length-1;i++){
                     if (currPos > cards[i].offsetTop - offset && currPos < cards[i+1].offsetTop){
-                        console.log('currPos'+currPos+'card '+cards[i].id);
                         $('.nav-item').removeClass('active');
                         $('#nav-item-select_project').removeClass('active');
                         $('#nav-item-'+cards[i].id).addClass('active');
@@ -383,6 +381,20 @@ function init_socketio() {
                                 "Speedup, Efficiency, Expected Bandwidth",
                                 output);
                     var content = perf_table_card;
+                    var source_runtime=msg.c_source_benchmark['init'];
+                    source_runtime+=msg.c_source_benchmark['kernel'];
+                    source_runtime+=msg.c_source_benchmark['final'];
+                    content +="<br><h3>C Source Profiling</h3><br>";
+                    content +="<br>Tsource = Ti + Tk + Tf= "+source_runtime+" microseconds<br>";
+                    content +="Ti = "+msg.c_source_benchmark['init']+" microseconds<br>";
+                    content +="Tk = "+msg.c_source_benchmark['kernel']+" microseconds<br>";
+                    content +="Tf = "+msg.c_source_benchmark['final']+" microseconds<br>";
+                    content +="<br><h3>DFE extimataion</h3><br>";
+                    content +="Tk_DFE = Size (MB) / Throughput (MB/s)="+(msg.dfe_extimation['time_extimation_microsecond']-0.005).toFixed(2)+" microseconds<br>";
+                    content +="Size (MB) = "+msg.dfe_extimation['processed_Mbytes']+"<br>";
+                    content +="Throughtput (MB/s) ="+msg.dfe_extimation['throughput_extimation']+"<br>";
+                    content +="<h3>Extimated Speedup = "+(msg.c_source_benchmark['kernel']/msg.dfe_extimation['time_extimation_microsecond']-0.005).toFixed(2)+"</h3>";
+
                     content+=`
                     <br>
                     <form id='generate_design' method='POST' action='#'>
@@ -617,9 +629,14 @@ function init_socketio() {
                 var content='<div id="benchmark_plot"></div>';
                 var benchmark_csv='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
                         "<a href='"+msg.benchmark_data+
-                        "' style='color: inherit;text-decoration: inherit;'> Benchmark Results</a>"+
+                        "' style='color: inherit;text-decoration: inherit;'> Benchmark DFE Results</a>"+
+                    "</button> ";
+                var cpu_benchmark_csv='<button class="btn-dl"><i class="fa fa-download"></i>'+ 
+                        "<a href='"+msg.cpu_benchmark_data+
+                        "' style='color: inherit;text-decoration: inherit;'> Benchmark CPU Results</a>"+
                     "</button> ";
                 content+=benchmark_csv; 
+                content+=cpu_benchmark_csv;
                 var card = create_card(title,content);
                 $('#benchmark_output').html("");
                 $('#benchmark_output').prepend(card);
@@ -637,7 +654,7 @@ function init_socketio() {
                     
                     }
                 };
-                var data = [ msg.benchmark_plot_data, msg.benchmark_plot_extimation]
+                var data = [ msg.benchmark_plot_data, msg.benchmark_plot_extimation,msg.benchmark_cpu_plot_data]
                 Plotly.newPlot('benchmark_plot', data,layout);
                 
             });
