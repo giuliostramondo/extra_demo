@@ -176,9 +176,9 @@ function get_trace_plot_legend()
                 </div>`;
     return legend;
 }
-function get_trace_plot_layout(){
+function get_trace_plot_layout(title_='Application Trace'){
         var layout = {
-                          title: 'Application Trace',
+                          title: title_,
                           /*margin: {
                             t: 200,
                             r: 200,
@@ -306,6 +306,7 @@ function init_socketio() {
             
             socket.on('analysis_output',function(msg){
                         console.log('Received Analysis output')
+                        console.log(msg);
                         console.log(msg.parser_out);
                         console.log(msg.data);
                         console.log('loop_info');
@@ -314,6 +315,8 @@ function init_socketio() {
                         console.log(msg.vec_access_info);
                         console.log('vec_size_info');
                         console.log(msg.vec_size_info);
+                        console.log('heatmaps');
+                        console.log(msg.plots)
                         hide_loading_card();
                         $("#nav-item-analysis_output").css("visibility", "visible");
 
@@ -330,7 +333,12 @@ function init_socketio() {
                         content+=loop_info_string;
                         content+=vector_info_string;
                         content+=vec_access_info_string;
-                        content+='<div id="trace_plot">'+legend+'</div>';
+                        //content+='<div id="trace_plot">'+legend+'</div>';
+                        for(var i=0;i< msg.plots.length ;i++){
+                        console.log("here_plot_"+i);
+                        content+='<div id="trace_plot_'+i+'">'+legend+'</div>';
+                        
+                        }
                         content+=`
                         <form id='performance' method='POST' action='#'>
                             <input type="SUBMIT" value="Performance Prediction">
@@ -339,8 +347,13 @@ function init_socketio() {
                         //Remove old content of source_code div
                         $('#analysis_output').html("");
                         $('#analysis_output').prepend(card);
-                        Plotly.newPlot('trace_plot', [msg.data],layout);
-
+                        //Plotly.newPlot('trace_plot', [msg.data],layout);
+                        
+                        for(var i=0;i< msg.plots.length ;i++){
+                        var layout_i = get_trace_plot_layout(msg.plots[i][0]);
+                        Plotly.newPlot('trace_plot_'+i, [msg.plots[i][1]],layout_i);
+                        }
+                        
                         $('form#performance').submit(function(event){
                             socket.emit('performance_prediction',{'data':'ciao'});
                             show_loading_card("Performance Prediction");
@@ -389,11 +402,11 @@ function init_socketio() {
                     content +="Ti = "+msg.c_source_benchmark['init']+" microseconds<br>";
                     content +="Tk = "+msg.c_source_benchmark['kernel']+" microseconds<br>";
                     content +="Tf = "+msg.c_source_benchmark['final']+" microseconds<br>";
-                    content +="<br><h3>DFE extimataion</h3><br>";
+                    content +="<br><h3>DFE estimation</h3><br>";
                     content +="Tk_DFE = Size (MB) / Throughput (MB/s)="+(msg.dfe_extimation['time_extimation_microsecond']-0.005).toFixed(2)+" microseconds<br>";
                     content +="Size (MB) = "+msg.dfe_extimation['processed_Mbytes']+"<br>";
                     content +="Throughtput (MB/s) ="+msg.dfe_extimation['throughput_extimation']+"<br>";
-                    content +="<h3>Extimated Speedup = "+(msg.c_source_benchmark['kernel']/msg.dfe_extimation['time_extimation_microsecond']-0.005).toFixed(2)+"</h3>";
+                    content +="<h3>Estimated Speedup = "+(msg.c_source_benchmark['kernel']/msg.dfe_extimation['time_extimation_microsecond']-0.005).toFixed(2)+"</h3>";
 
                     content+=`
                     <br>

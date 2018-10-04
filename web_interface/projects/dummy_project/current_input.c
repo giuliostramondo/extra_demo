@@ -1,9 +1,9 @@
 #include<stdio.h>
 
-int main(){
+int main(int argc, char *argv[]){
 int offset=5;
 int skip=4;
-int read=1;
+int read=3;
 int DimY= 512;
 int DimX= 170;
 
@@ -23,10 +23,10 @@ for (int i=0;i<170;i++)
 #pragma polymem out 340 0 double C[170][512]
 
 #pragma polymem loop
-for(int i=0;i<169;i+=1){
-	for(int j=0;j<511;j+=1){
+for(int i=0;i<170;i+=1){
+	for(int j=0;j<512;j+=1){
 		if((i*DimY+j)>=offset && (i*DimY+j-offset)%(skip+read)<read){
-			C[i][j]=A[i][j]+B[i+1][j+1]+B[i-1][i+1];
+			B[i][j]=A[i][j]+C[i][j];
 			}
 	}
 }

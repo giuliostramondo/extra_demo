@@ -116,7 +116,6 @@ def send_room_message(message):
          {'data': message['data'], 'count': session['receive_count']},
          room=message['room'])
 
-
 @socketio.on('disconnect_request', namespace='/test')
 def disconnect_request():
     session['receive_count'] = session.get('receive_count', 0) + 1
@@ -140,7 +139,11 @@ def test_connect():
 
 @socketio.on('load_projects', namespace='/test')
 def load_project():
-    dirs=os.listdir('./projects')
+    dirs=[]
+    contents=os.listdir('./projects')
+    for c in contents:
+        if os.path.isdir('./projects/'+c):
+            dirs.append(c)
     emit('my_projects', { 'projects': dirs,'selected_project': session.get('selected_project','not set')})
 
 def send_analysis_results(project_path):
@@ -150,6 +153,16 @@ def send_analysis_results(project_path):
     concurrentAccessList=parseATrace(project_path+'/current_input_no_includes.atrace')
     print "checking plot dimensions"
     dimensions = find_plot_dimension(concurrentAccessList)
+
+    with open(project_path+'/current_input_no_includes.vec_info') as f:
+        vec_access_info = json.load(f)       
+   
+    accesses_rw=[]
+    for acc in vec_access_info[1]:
+        accesses_rw.append(acc)
+    for acc in vec_access_info[2]:
+        accesses_rw.append(acc)
+
     
     # The conversion to set makes the for loop way faster 
     concurrentAccessSet=set(concurrentAccessList[0])
@@ -162,6 +175,17 @@ def send_analysis_results(project_path):
                 z.append(1);
             else:
                 z.append(0);
+    
+    traces=[]
+    for acc in accesses_rw:
+        name=acc[3][0]+"["+acc[3][1]+"]["+acc[3][2]+"]"
+        z_1=[0 for i in range(0,dimensions[0]*dimensions[1])]
+        for i in range(0,dimensions[0]):
+            for j in range(0,dimensions[1]):
+                if z[i*dimensions[1]+j] == 1  :
+                    if (i+int(acc[2][0])< dimensions[0]) and (j+int(acc[2][1])<dimensions[1]) and (i+int(acc[2][0])>=0 )and (j+int(acc[2][1])>=0):
+                        z_1[(i+int(acc[2][0]))*dimensions[1]+(j+int(acc[2][1]))]=1
+        traces.append((name,z_1))
 
     with open(project_path+'/parser_out','r') as f:
         parser_out = f.read()
@@ -169,12 +193,26 @@ def send_analysis_results(project_path):
     with open(project_path+'/current_input_no_includes.loop_info') as f:
         loop_info = json.load(f) 
 
-    with open(project_path+'/current_input_no_includes.vec_info') as f:
-        vec_access_info = json.load(f)    
+
 
     with open(project_path+'/current_input_no_includes.vec_size_info') as f:
         vec_size_info = json.load(f)       
     
+    heatmaps=[]
+    for trace in traces:
+        data={'x': y, 'y':x,'z':trace[1],
+                'showscale' :False,'type':'heatmap','xgap':1,'ygap':1,
+                'colorscale': [
+                    [0, 'rgb(0, 0, 0)'],
+                    [1, 'rgb(255, 255, 255)']],
+                'colorbar': {
+                    'tick0':0,
+                    'dtick':1,
+                    'tickvals':[0,1],
+                    'ticktext':['Not accessed','Accessed']
+                    }}
+        heatmaps.append((trace[0],data))
+
     print "emitting data"
     emit('analysis_output',
             {'parser_out': parser_out, 
@@ -189,6 +227,7 @@ def send_analysis_results(project_path):
                     'tickvals':[0,1],
                     'ticktext':['Not accessed','Accessed']
                     }},
+                'plots':heatmaps,
                 'loop_info':loop_info,
                 'vec_access_info':vec_access_info,
                 'vec_size_info': vec_size_info
@@ -667,7 +706,7 @@ def synthesize_design():
     outfile = open(project_path+'/max_synth.out', 'w');
     os.system("cd "+project_path+
             ";cp -r PolyMemStream_out_no_synth PolyMemStream_out_synth;");
-    popenAndCall(socketio,synthesis_done,outfile, ["cd "+project_path+"; cd ./PolyMemStream_out_synth/CPUCode;make RUNRULE=DFE build;cd "+project_path+";zip -r PolyMemStream_out_synth.zip PolyMemStream_out_synth"],project_path)
+    popenAndCall(socketio,synthesis_done,outfile, ["cd "+project_path+"; cd ./PolyMemStream_out_synth/CPUCode;make RUNRULE=DFE build;cd ../..;zip -r PolyMemStream_out_synth.zip PolyMemStream_out_synth"],project_path)
     print "Started to build"
 
 def benchmark_done(socketio_,project_path):
