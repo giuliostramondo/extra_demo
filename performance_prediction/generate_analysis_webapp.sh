@@ -20,7 +20,7 @@ data_width=8
 used_ports_r_w=3
 
 N_sequential_read=`cat ${file_name_stem}.atrace | sed -E "s/,/\n/g"| wc -l`
-echo "Memories,P,Q,Scheme,N_sequential_read,N_parallel_read,Speedup,Efficiency,Extimated BW (GB/s),Extimated Frequency (MHz),schedule_file">$output_file
+echo "Memories,P,Q,Scheme,N_sequential_read,N_parallel_read,Speedup,Efficiency,Estimated BW (GB/s),Estimated Frequency (MHz),Schedule File">$output_file
 for schedule in $(ls . | grep schedule$); do 
     echo "this is i -> "$schedule 
     info=(`echo $schedule | sed "s/${file_name_stem}_\(.*\)_\([0-9]\+\)mems_p\([0-9]\+\)_q\([0-9]\+\).*/\1 \2 \3 \4/"`)

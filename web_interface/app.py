@@ -268,7 +268,7 @@ def send_performance_results( project_path ):
                 final_runtime=float(r[7])
                 kernel_runtime=float(r[11])
                 break
-    #Extract throughput extimation
+    #Extract throughput estimation
     throughputs=[]
     first_row=True
     elements_accessed=[]
@@ -440,7 +440,7 @@ def send_benchmark_results(project_path=""):
             else:
                 y_cpu.append(float(r[14]))
 
-    emit('benchmark_results',{'benchmark_data': benchmark_csv_url,'cpu_benchmark_data':benchmark_cpu_csv_url,'benchmark_plot_data':{'x':x,'y':y,'mode':'markers','type':'skatter','name':'Measured','marker': { 'size': 10 }},'benchmark_plot_extimation':{'x':x,'y':y_ref,'mode':'lines','type':'skatter','name':'Extimated'},'benchmark_cpu_plot_data':{'x':x,'y':y_cpu,'mode':'markers','type':'skatter','name':'Measured CPU','marker': { 'size': 10 }},'benchmark_stdout':benchmark_stdout_url})   
+    emit('benchmark_results',{'benchmark_data': benchmark_csv_url,'cpu_benchmark_data':benchmark_cpu_csv_url,'benchmark_plot_data':{'x':x,'y':y,'mode':'markers','type':'skatter','name':'Measured','marker': { 'size': 10 }},'benchmark_plot_extimation':{'x':x,'y':y_ref,'mode':'lines','type':'skatter','name':'Estimated'},'benchmark_cpu_plot_data':{'x':x,'y':y_cpu,'mode':'markers','type':'skatter','name':'Measured CPU','marker': { 'size': 10 }},'benchmark_stdout':benchmark_stdout_url})   
 
 #ordered list of phases
 phase_list = ['analysis','performance_prediction','design_generation',"simulation","synthesis","benchmark"]

@@ -67,7 +67,7 @@ function create_loop_info_string( loop_info )
                 loop_info_string+='<th>Iterator Name</th>';
                 loop_info_string+='<th>Start</th>';
                 loop_info_string+='<th>End</th>';
-                loop_info_string+='<th>Stride</th>';
+                loop_info_string+='<th>Step</th>';
                 loop_info_string+='</tr>';
             for ( var i in loop_info){
                 loop_info_string+='<tr>';
