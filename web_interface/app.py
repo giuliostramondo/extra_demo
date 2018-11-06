@@ -3,6 +3,7 @@ from threading import Lock
 from flask import Flask, render_template, session, request,url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
+from flask_session import Session
 from shutil import copyfile, rmtree
 import os
 import io
@@ -46,7 +47,10 @@ async_mode = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode=async_mode)
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
+socketio = SocketIO(app,async_mode=async_mode, manage_session=False)
+#socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock()
 
