@@ -12,7 +12,7 @@ To start the web application follow the instruction in ./web_interface/README
 Web Application Screenshots
 ===========================
 
-A video of this Demo is available ![video demo](http://stunningbit.com/owncloud/index.php/s/Wj5xrh5f5xrRYmx)
+A video of this Demo is available [video demo](http://stunningbit.com/owncloud/index.php/s/Wj5xrh5f5xrRYmx)
 
 Project Selection and Code Editing
 
