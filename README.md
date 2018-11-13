@@ -11,5 +11,24 @@ To start the web application follow the instruction in ./web_interface/README
 
 Web Application Screenshots
 ===========================
+Project Selection and Code Editing
 
 ![Project Selection](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step1.png)
+
+Code Analysis Results
+![Analysis](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step2.png)
+![Analysis](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step3.png)
+![Analysis](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step4.png)
+![Analysis](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step5.png)
+
+Performance Prediction
+![Prediction](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step6.png)
+
+Design Generation and Verification
+![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step7.png)
+
+Synthesis
+![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step7.png)
+
+Benchmark
+![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step7.png)
