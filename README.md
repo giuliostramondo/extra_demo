@@ -11,6 +11,9 @@ To start the web application follow the instruction in ./web_interface/README
 
 Web Application Screenshots
 ===========================
+
+A video of this Demo is available ![video demo](http://stunningbit.com/owncloud/index.php/s/Wj5xrh5f5xrRYmx)
+
 Project Selection and Code Editing
 
 ![Project Selection](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step1.png)
