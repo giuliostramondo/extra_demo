@@ -28,7 +28,7 @@ Design Generation and Verification
 ![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step7.png)
 
 Synthesis
-![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step7.png)
+![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step8.png)
 
 Benchmark
-![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step7.png)
+![Design](https://raw.githubusercontent.com/giuliostramondo/extra_polymem_demo/master/images/Extra_UVA_DEMO_Step9.png)
